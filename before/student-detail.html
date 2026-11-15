@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — 회원 상세</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [6.2.3.1.0.0.0]회원상세 (375:163032) — 뷰 위주: 탭·편집·추가/수정·클래스 이동·납부일 저장·하단 바로가기는 동작 없음. **클래스에서 제외**는 동작한다(소속 클래스를 비움), **삭제**는 학생을 학원에서 지운다(확인 모달 후).
+    Opened from 학생 명단(student-manage?class=…)의 학생 행. 값은 등록한 실제 데이터를 쓴다(없는 값은 "-"/"미입력", 형제/자매 연결정보는 데이터가 없어 생략).
+    Shared by before/ and after/ — keep both copies identical (title only differs).
+  -->
+  <style>
+    .hero { flex: none; height: 160px; background: #E6F8EB; position: relative; }
+    .hero .rz-icon, .hero > svg { position: absolute; left: 20px; top: 33px; width: 96px; height: 96px; }
+    .hero__txt { position: absolute; left: 132px; top: 31px; right: 16px; }
+    .hero__role { display: flex; align-items: center; gap: 4px; height: 20px; font: 500 14px/20px var(--rz-font-sans); color: var(--rz-gray-06); }
+    .hero__role svg { width: 10px; height: 10px; }
+    .hero__name { margin: 0; font: 700 20px/28px var(--rz-font-sans); color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hero__date { margin: 8px 0 0; font: 400 10px/12px var(--rz-font-sans); color: var(--rz-gray-05); }
+    .hero__tel { margin-top: 8px; width: 124px; height: 20px; border-radius: 11.5px; background: var(--rz-primary); color: var(--rz-gray-01); display: flex; align-items: center; gap: 2px; padding: 0 0 0 8px; box-sizing: border-box; font: 500 12px/20px var(--rz-font-sans); white-space: nowrap; }
+    .hero__tel svg { width: 11px; height: 11px; flex: none; }
+    .body { padding: 15px 15px 96px; }
+    .sec { margin-top: 35px; }
+    .sec:first-child { margin-top: 0; }
+    .sec__head { display: flex; align-items: center; justify-content: space-between; min-height: 24px; margin-bottom: 8px; }
+    .sec__title { margin: 0; font: 700 14px/18px var(--rz-font-sans); color: var(--rz-black); }
+    .sec__link { font: 500 14px/18px var(--rz-font-sans); color: var(--rz-gray-06); }
+    .reg { border-radius: 10px; box-shadow: inset 0 0 0 1px var(--rz-gray-03); margin-top: 8px; padding: 0; overflow: hidden; }
+    .reg__tabs { position: relative; height: 38px; display: flex; align-items: center; padding: 0 16px; gap: 16px; }
+    .reg__tab { position: relative; height: 38px; display: flex; align-items: center; font: 400 12px/18px var(--rz-font-sans); color: var(--rz-gray-05); }
+    .reg__tab.is-on { color: #079732; }
+    .reg__tab.is-on::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--rz-primary); }
+    .reg__edit { margin-left: auto; display: inline-flex; }
+    .reg__rows { margin: 0; background: var(--rz-gray-01); padding: 0 0 4px; border-radius: 0 0 10px 10px; }
+    .reg__row { display: flex; gap: 0; min-height: 36px; align-items: center; padding: 0 15px; font: 500 14px/20px var(--rz-font-sans); }
+    .reg__row dt { flex: none; width: 108px; color: var(--rz-gray-05); }
+    .reg__row dd { margin: 0; flex: 1; color: var(--rz-gray-06); padding: 8px 0; }
+    .plus { height: 24px; padding: 0 10px; border: 0; border-radius: 8px; background: var(--rz-primary); color: var(--rz-white); font: 700 12px/24px var(--rz-font-sans); }
+    .rel { position: relative; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0; }
+    .rel + .rel { box-shadow: inset 0 1px 0 var(--rz-gray-02); margin-left: 5px; }
+    .rel__who { flex: 1; min-width: 0; }
+    .rel__name { margin: 0; font: 700 14px/18px var(--rz-font-sans); color: var(--rz-black); }
+    .rel__tel { margin: 0; display: flex; align-items: center; gap: 4px; font: 400 12px/16px var(--rz-font-sans); color: var(--rz-gray-05); }
+    .rel__tel svg { width: 12px; height: 12px; }
+    .rel__date { flex: none; font: 300 12px/16px var(--rz-font-sans); color: var(--rz-gray-05); }
+    .cls { border-radius: 8px; box-shadow: inset 0 0 0 1px var(--rz-gray-03); padding: 16px; height: 146px; box-sizing: border-box; position: relative; margin-top: 8px; }
+    .cls__name { margin: 0; font: 400 12px/18px var(--rz-font-sans); color: var(--rz-gray-06); }
+    .cls__date { margin: 0; font: 300 10px/16px var(--rz-font-sans); color: var(--rz-gray-04); }
+    .cls__btns { position: absolute; right: 16px; top: 20px; display: flex; gap: 8px; }
+    .cls__btns span, .cls__btns button { height: 26px; border: 0; cursor: pointer; box-sizing: border-box; border-radius: 8px; padding: 0 8px; display: inline-flex; align-items: center; font: 700 12px/18px var(--rz-font-sans); background: var(--rz-white); }
+    .cls__btns .d { box-shadow: inset 0 0 0 1px #FF3434; color: #FF3434; }
+    .cls__none { display: flex; justify-content: flex-end; margin-top: 8px; }
+    .cls__none .d { height: 26px; border: 0; border-radius: 8px; padding: 0 8px; background: var(--rz-white); box-shadow: inset 0 0 0 1px #FF3434; color: #FF3434; font: 700 12px/18px var(--rz-font-sans); cursor: pointer; }
+    .cls__btns .a { box-shadow: inset 0 0 0 1px var(--rz-gray-06); color: var(--rz-gray-07); }
+    .cls__btns .b { box-shadow: inset 0 0 0 1px var(--rz-primary); color: var(--rz-primary); }
+    .cls__lbl { margin: 14px 0 8px; font: 400 12px/18px var(--rz-font-sans); color: var(--rz-gray-06); }
+    .cls__pay { display: flex; gap: 8px; }
+    .cls__pay .rz-select-wrap { flex: 1; }
+    .cls__save { flex: none; width: 58px; height: 40px; border-radius: 8px; background: var(--rz-gray-03); color: var(--rz-gray-05); display: grid; place-items: center; font: 500 14px/20px var(--rz-font-sans); }
+    .dock { flex: none; height: 72px; background: var(--rz-gray-06); display: flex; justify-content: center; gap: 0; }
+    .dock > div { width: 90px; display: flex; flex-direction: column; align-items: center; padding-top: 13px; color: var(--rz-gray-04); font: 400 12px/18px var(--rz-font-sans); gap: 4px; }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script>
+    const R = Rallyz;
+    const { $, go } = Onb;
+    const data = RzData.get();
+    if (!data.academy) location.replace("./index.html");
+    const qs = new URLSearchParams(location.search);
+    const sid = Number(qs.get("sid"));
+    const s = data.students[sid];
+    const klassQ = qs.get("class") || "";
+    const back = () => go(`./student-manage.html${klassQ ? `?class=${encodeURIComponent(klassQ)}` : ""}`);
+    if (!s) location.replace("./student-manage.html");
+
+    const tel = (n) => { const d = String(n || "").replace(/[^0-9]/g, ""); return d.length === 11 ? `${d.slice(0, 3)} - ${d.slice(3, 7)} - ${d.slice(7)}` : n || "-"; };
+    const joined = s.joined || "-";
+    const gender = s.gender ? s.gender.replace("자", "") : "-"; // 남자/여자 → 남/여
+    const gradeTxt = s.grade ? s.grade.replace(/\s+/, "･") : "-";
+    const guardian = s.guardian && s.guardian !== s.phone ? s.guardian : "";
+
+    const tabs = R.Tabs({ type: "tap01", items: ["학생정보", "출석현황", "학습 보고서", "상담이력"], selected: 0 });
+    tabs.addEventListener("click", (e) => { if (e.target.closest("button") !== tabs.children[0]) e.stopPropagation(); }, true); // 다른 탭 디자인 없음(뷰만)
+
+    /* hero */
+    const svg = (html, size) => { const w = document.createElement("span"); w.style.display = "inline-flex"; w.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">${html}</svg>`; return w; };
+    // 작은 휴대폰 / 사람 글리프 (시안 icon-phone · user)
+    const phoneSvg = (c) => svg(`<rect x="3" y="0.75" width="6" height="10.5" rx="1.4" stroke="${c}" stroke-width="1.2"/><circle cx="6" cy="9.2" r="0.6" fill="${c}"/>`, 11);
+    const userSvg = () => svg('<circle cx="6" cy="3.6" r="2.2" fill="#07B53B"/><path d="M1.8 11c0-2.3 1.9-3.8 4.2-3.8s4.2 1.5 4.2 3.8z" fill="#07B53B"/>', 10);
+    const hero = $("div", "hero", [
+      R.Icon("solid/profile", { size: 96 }),
+      $("div", "hero__txt", [
+        $("div", "hero__role", ["학생", userSvg()]),
+        $("p", "hero__name", [s.name]),
+        $("p", "hero__date", [`등록일자 ${joined}`]),
+        $("div", "hero__tel", [phoneSvg("var(--rz-gray-01)"), tel(s.phone)]),
+      ]),
+    ]);
+
+    /* 등록정보 */
+    const row = (k, v) => $("div", "reg__row", [$("dt", "", [k]), $("dd", "", [v])]);
+    const reg = $("div", "reg", [
+      $("div", "reg__tabs", [$("span", "reg__tab is-on", ["학원 등록정보"]), $("span", "reg__tab", ["학생 등록정보"]), $("span", "reg__edit", [R.Icon("line/ic24_edit", { size: 24, color: "var(--rz-gray-06)" })])]),
+      $("dl", "reg__rows", [row("이름", s.name), row("관리용 이름", "미입력"), row("학생 연락처", s.phone || "-"), row("성별", gender), row("학교", s.school || "-"), row("학년", gradeTxt), row("주소", "-")].map((r) => r)),
+    ]);
+    reg.querySelector("dl").style.margin = "0";
+    const section = (title, trail, kids) => $("section", "sec", [$("div", "sec__head", [$("h3", "sec__title", [title]), trail]), ...kids]);
+    const plusBtn = () => $("span", "plus", ["추가/수정"]); // 동작 없음(뷰만)
+
+    /* 보호자 연결정보 — 보호자 연락처를 등록한 경우에만 */
+    const rel = (name, phone) => $("div", "rel", [
+      R.Icon("solid/profile-unsubscribed", { size: 32 }),
+      $("div", "rel__who", [$("p", "rel__name", [name]), $("p", "rel__tel", [phoneSvg("var(--rz-gray-04)"), phone])]),
+      $("span", "rel__date", [`등록일자 ${joined}`]),
+    ]);
+    // 클래스에서 제외: 이 학생의 소속 클래스를 비운다(클래스 미배정). 소속 클래스 영역에는 카드가 사라진다.
+    const exclude = $("button", "a", ["클래스에서 제외"], { type: "button" });
+    exclude.addEventListener("click", () => { RzData.update((d) => { if (d.students[sid]) d.students[sid].klass = ""; }); location.reload(); });
+    // 삭제: 이 학생을 학원에서 삭제한다(확인 모달 후, 클래스 삭제와 같은 아니오/예 형식). 학생 목록으로 돌아간다.
+    const del = $("button", "d", ["삭제"], { type: "button" });
+    del.addEventListener("click", () => R.showAlert(document.querySelector(".rz-device__screen"), {
+      message: `${s.name}(을)를\n학원에서 삭제하시겠습니까?`, cancelLabel: "아니오", confirmLabel: "예",
+      onConfirm: () => { RzData.removeStudent(sid); go(`./student-manage.html${klassQ ? `?class=${encodeURIComponent(klassQ)}` : ""}`); },
+    }));
+    const sections = [
+      $("section", "sec", [$("h3", "sec__title", ["등록정보"]), reg]),
+      section("보호자 연결정보", plusBtn(), guardian ? [rel(`${s.name} 보호자`, guardian)] : []),
+      // 형제/자매 연결정보: 연결 데이터가 없어 생략
+      section("소속 클래스", $("span", "sec__link", ["클래스 변경 이력"]), s.klass ? [$("div", "cls", [
+        $("p", "cls__name", [s.klass]), $("p", "cls__date", [`등록일자 ${joined}`]),
+        $("div", "cls__btns", [exclude, $("span", "b", ["클래스 이동"]), del]), // 클래스 이동은 디자인이 없어 동작 없음
+        $("p", "cls__lbl", ["납부일"]),
+        $("div", "cls__pay", [R.Select({ value: s.payDay || "1일", size: 40, options: [] }), $("span", "cls__save", ["저장"])]),
+      ])] : [$("div", "cls__none", [del])]), // 클래스가 없어도 삭제할 수 있게 삭제 버튼만 둔다
+    ];
+    const dock = $("div", "dock", [["청구서 생성", "glyph/ux-24_bill"], ["납부관리", "line/ic24_payment"], ["회차관리", "line/ic24_count"]].map(([l, ic]) => $("div", "", [R.Icon(ic, { size: 24, color: "var(--rz-gray-04)" }), l])));
+    const screen = $("div", "screen", [R.StatusBar(), R.FlowHeader({ title: "회원 상세", lead: "close", onLead: back }), tabs, $("div", "scroll", [hero, $("div", "body", sections)]), dock]);
+    document.getElementById("root").append(R.Device({ children: [screen] }));
+  </script>
+</body>
+</html>

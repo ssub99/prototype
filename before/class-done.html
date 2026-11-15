@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — 학생 등록 유도</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!-- Figma: 002.06.온보딩/학생유도 (296:125554) -->
+  <style>.guide__accent { margin-top: 16px; }</style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script>
+    const { Device, StatusBar, ButtonGroup } = Rallyz;
+    const { $, go } = Onb;
+
+    const body = $("div", "guide");
+    body.innerHTML = `
+      <img class="guide__hands" src="../assets/onboarding/done-hands.svg" alt="" />
+      <h1 class="guide__title">클래스 등록이 완료되었습니다.</h1>
+      <p class="guide__accent">이제, 학생을 등록해 보겠습니다.</p>
+      <p class="guide__desc">학습관리 및 소통, 청구서 발송 및 간편결제,\n화상강의 등 랠리즈의 간편한 기능을 활용할\n학생을 등록해주세요.</p>
+      <div class="guide__tip">
+        <strong><i>TIP</i>학부모 자동연결</strong>
+        <p>학생 등록을 완료하시면,학생과 연결된 보호자는<br />자동으로 클래스에 등록됩니다.</p>
+      </div>`;
+
+    const footer = $("div", "footer", [ButtonGroup({
+      primary: "학생등록", secondary: "나중에 하기", secondaryColor: "green",
+      onPrimary: () => go("./student-register.html"),
+      onSecondary: () => go("./home.html"),
+    })]);
+    const screen = $("div", "screen", [StatusBar(), $("div", "scroll", [body]), footer]);
+    document.getElementById("root").append(Device({ children: [screen] }));
+  </script>
+</body>
+</html>

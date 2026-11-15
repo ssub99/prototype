@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — 클래스 만들기</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: 002.04.온보딩/클래스등록 (296:125855)
+           002.04.1.…/나중에하기팝업 (296:125938) · 002.05.…/클래스등록/완료 (296:126028)
+  -->
+  <style>
+    .academy-title { margin: 48px 0 48px; text-align: center; font: var(--rz-type-headline-bold); } /* 학원명 위·아래 여백 48 */
+    .academy-title + .field { margin-top: 0; }
+    .subject-row { display: grid; grid-template-columns: 127px 127px 73px; gap: 8px; }
+    .subject-row .rz-btn, .schedule-row .rz-btn { width: 73px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+    .chips:empty { display: none; }
+    .chips--small { gap: 8px; }
+    .feature-input { padding-right: 13px; }
+    .days { display: grid; grid-template-columns: repeat(7, 42px); justify-content: space-between; }
+    .schedule-row { display: flex; gap: 8px; margin-top: 16px; align-items: center; }
+    .time-box { position: relative; }
+    .time-box input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .schedules { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+    .schedules:empty { display: none; }
+    .radios { display: grid; grid-template-columns: 172px 1fr; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; height: 48px; padding: 0 12px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--rz-gray-03); font: var(--rz-type-body02-regular); color: var(--rz-gray-06); }
+    .toggle-row + .toggle-row { margin-top: 4px; }
+    .teacher-field .field__head { margin-bottom: 0; }
+    .teacher-field .field__sub { margin: 2px 0 8px; }
+    /* 강사 불러오기 sub-screen — reused from 개선 후 (no 개선 전 design) */
+    .sub-screen { position: absolute; inset: 0; z-index: 60; background: var(--rz-white); display: flex; flex-direction: column; }
+    .t-new { padding: 24px 16px; }
+    .t-new .field__head { margin-bottom: 8px; }
+    .t-note { margin: 0; height: 40px; border-radius: 8px; background: #FFF2F2; padding: 0 12px; display: flex; align-items: center; font: var(--rz-type-small01-medium); color: var(--rz-red); }
+    .t-band { height: 8px; background: var(--rz-gray-02); flex: none; }
+    .t-list { padding: 32px 16px 16px; }
+    .t-list .rz-row { min-height: 56px; cursor: pointer; }
+    .t-list .rz-row + .rz-row { border-top: 1px solid var(--rz-gray-02); }
+    .money { justify-content: flex-end; gap: 4px; }
+    .money input { text-align: right; }
+    .money span { flex: none; color: var(--rz-gray-06); }
+    .tight-head .field__head { margin-bottom: 0; }
+    .tight-head .field__sub { margin: 2px 0 8px; }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script src="../common/class-fee.js?v=4"></script>
+  <script src="../common/time-picker.js?v=3"></script>
+  <script>
+    const R = Rallyz;
+    const { $, field, shell, footer, alert, store, go } = Onb;
+
+    const SUBJECTS = {
+      "내신/수능": ["국어", "영어", "수학", "사회", "과학", "한국사"],
+      "예체능": ["미술", "음악", "체육", "무용"],
+      "성인": ["어학", "자격증", "취미"],
+      "IT": ["코딩", "디자인", "영상편집"],
+      "기타": ["기타"],
+    };
+    const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
+    const fmt = (hhmm) => {
+      if (!hhmm) return "";
+      const [h, m] = hhmm.split(":").map(Number);
+      return `${h < 12 ? "오전" : "오후"} ${String(h % 12 || 12).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    };
+    let st;
+    const reset = () => (st = { teacher: null, name: "", main: "", sub: "", subjects: [], features: [], days: new Set(), from: "", to: "", schedules: [], type: "" });
+    reset();
+
+    /* 클래스명 */
+    const nameInput = R.Input({ placeholder: "개나리반 클래스", name: "className", onInput: (v) => (st.name = v.trim()) });
+    const nameField = field("클래스명", { required: true }, nameInput);
+
+    /* 과목 분류: 대분류 select + 소분류 select + 선택 */
+    const subjectRow = $("div", "subject-row");
+    const subjectChips = $("div", "chips chips--small");
+    function renderSubject() {
+      subjectRow.replaceChildren(
+        R.Select({ value: st.main, placeholder: "선택", size: 48, options: Object.keys(SUBJECTS), onChange: (v) => { st.main = v; st.sub = ""; renderSubject(); } }),
+        R.Select({ value: st.sub, placeholder: "선택", size: 48, disabled: !st.main, options: st.main ? SUBJECTS[st.main] : [], onChange: (v) => { st.sub = v; } }),
+        R.Button({ label: "선택", size: 48, variant: "line", color: "green", onClick: addSubject }),
+      );
+      subjectChips.replaceChildren(...st.subjects.map((k) => R.Chip({ label: k.split("::")[1], size: "small", type: "type02" })));
+    }
+    function addSubject() {
+      if (!st.main || !st.sub) return;
+      const key = `${st.main}::${st.sub}`;
+      if (st.subjects.includes(key)) return;
+      if (st.subjects.length >= 5) { alert(subjectRow, { message: "과목은 총 5개까지 선택 가능합니다." }); return; }
+      st.subjects.push(key); st.main = ""; st.sub = "";
+      renderSubject();
+    }
+    const subjectField = field("과목 분류", { required: true }, [subjectRow, $("p", "field__hint", ["총 5개까지 선택 가능합니다."]), subjectChips]);
+    subjectField.querySelector(".field__head").style.marginBottom = "4px";
+    subjectField.querySelector(".field__hint").style.cssText = "margin:4px 0 0;font:var(--rz-type-small01-regular)";
+
+    /* 클래스 특징 */
+    const featInput = $("input", "", [], { type: "text", placeholder: "수업 특장점, 세부 과목명 입력", maxlength: "20" });
+    const featBox = $("label", "rz-input feature-input", [featInput, R.Button({ label: "입력", size: "t32", variant: "line", color: "green", onClick: addFeature })]);
+    const featChips = $("div", "chips");
+    featInput.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); addFeature(); } });
+    function addFeature() {
+      const v = featInput.value.trim();
+      if (!v) return;
+      if (st.features.length >= 10) { alert(featBox, { message: "클래스 특징은 최대 10개까지 등록 가능합니다." }); return; }
+      if (!st.features.includes(v)) st.features.push(v);
+      featInput.value = "";
+      renderFeatures();
+    }
+    function renderFeatures() {
+      featChips.replaceChildren(...st.features.map((f) => R.Chip({ label: f, type: "type04-line", onRemove: () => { st.features = st.features.filter((x) => x !== f); renderFeatures(); } })));
+    }
+    const featureField = field("클래스 특징", { required: true, sub: "최대 10개 까지 등록 가능합니다." }, [featBox, featChips]);
+
+    /* 수업 일정: 42 day circles (check type04) + 시작/종료 시간(필수) + 추가 */
+    const daysRow = $("div", "days");
+    const scheduleRow = $("div", "schedule-row");
+    const scheduleList = $("div", "schedules");
+    // 시간 설정 bottom sheet (common/time-picker.js)
+    function timeBox(key) {
+      const box = R.DateField({ kind: "time", value: st[key] ? fmt(st[key]) : "오전 --:--", width: "time",
+        onClick: () => TimePicker.open({ value: st[key], kind: key, other: st[key === "from" ? "to" : "from"], onConfirm: (v) => { st[key] = v; renderSchedule(); } }) });
+      if (!st[key]) box.querySelector("span:last-child").style.color = "var(--rz-gray-04)";
+      box.setAttribute("aria-label", key === "from" ? "시작 시간" : "종료 시간");
+      return $("div", "time-box", [box]);
+    }
+    function renderSchedule() {
+      daysRow.replaceChildren(...DAYS.map((d) => R.DayCheck({ label: d, checked: st.days.has(d), onChange: (on) => (on ? st.days.add(d) : st.days.delete(d)) })));
+      scheduleRow.replaceChildren(
+        $("div", "rz-date-row", [timeBox("from"), $("span", "rz-date-row__dash"), timeBox("to")]),
+        R.Button({ label: "추가", size: 48, variant: "line", color: "green", onClick: addSchedule }),
+      );
+      scheduleList.replaceChildren(...st.schedules.map((s, i) => R.Attachment({ state: "days", days: s.days, time: s.time, onRemove: () => { st.schedules.splice(i, 1); renderSchedule(); } })));
+    }
+    function addSchedule() {
+      if (!st.days.size) { alert(scheduleRow, { message: "요일을 선택해 주세요." }); return; }
+      if (!st.from || !st.to) { alert(scheduleRow, { message: "수업 시간을 모두 입력해 주세요." }); return; }
+      st.schedules.push({ days: DAYS.filter((d) => st.days.has(d)).join(", "), time: `${fmt(st.from)} ~ ${fmt(st.to)}` });
+      st.days.clear(); st.from = ""; st.to = "";
+      renderSchedule();
+    }
+    const scheduleHead = Onb.head("수업 일정", { required: true }); // 필수 (시간 필수는 표기하지 않음)
+    const scheduleField = $("section", "field", [scheduleHead, daysRow, scheduleRow, scheduleList]);
+
+    /* 담당 강사 — 강사 불러오기 uses the 개선 후 screen (no 개선 전 design) */
+    const teacherInput = R.Input({ placeholder: "-", name: "teacher" });
+    teacherInput.querySelector("input").readOnly = true;
+    teacherInput.querySelector("input").style.cursor = "pointer";
+    teacherInput.addEventListener("click", () => openTeachers());
+    const teacherField = field("담당 강사", {
+      sub: "클래스를 운영, 관리할 수 있는 권한이 부여됩니다.",
+      trail: R.Button({ label: "강사 불러오기", size: "t24", variant: "line", color: "grey", onClick: () => openTeachers() }),
+    }, teacherInput);
+    teacherField.classList.add("teacher-field");
+
+    // 클래스 수강료 (필수): common/class-fee.js — sits right under 수업 일정; the 클래스 유형 below switches 기간반/회차반
+    const fee = ClassFee.create(st);
+    const typeField = fee.typeField; // 클래스 유형(필수) — common/class-fee.js
+    const toggleRow = (label) => $("div", "toggle-row", [label, R.Toggle({ label })]);
+    const displayField = field("클래스 정보 표시 항목", { sub: "학원 검색 시 클래스 소개에서 보이는 정보입니다." }, [toggleRow("수업 과목"), toggleRow("강사")]);
+
+    /* ---------------- 강사 불러오기 (sub-screen) ---------------- */
+    const teachers = [
+      { name: "김강사", phone: "010-1234-1234" },
+      { name: "송강사", phone: "010-5678-5678" },
+    ];
+    function openTeachers() {
+      let picked = st.teacher ? teachers.findIndex((t) => t === st.teacher) : -1;
+      const nm = R.Input({ placeholder: "등록할 강사의 실명 입력", name: "tName" });
+      const ph = R.Input({ placeholder: "강사 휴대폰 번호", name: "tPhone", type: "tel" });
+      const regWrap = $("div", "", [], { style: "margin-top:8px" });
+      const list = $("div", "");
+      const nmIn = nm.querySelector("input"), phIn = ph.querySelector("input");
+      const renderReg = () => regWrap.replaceChildren(R.Button({ label: "등록", size: 48, disabled: !(nmIn.value.trim() && phIn.value.trim()), onClick: () => {
+        teachers.push({ name: nmIn.value.trim(), phone: phIn.value.trim() });
+        picked = teachers.length - 1; nmIn.value = phIn.value = ""; renderReg(); renderList();
+      } }));
+      const renderList = () => list.replaceChildren(...teachers.map((t, i) => {
+        const row = R.MemberRow({ name: t.name, meta: t.phone, height: 56, select: "check", selected: i === picked, figmaName: i === picked ? "list/member_checked" : "list/member_default" });
+        row.addEventListener("click", (e) => { e.preventDefault(); picked = picked === i ? -1 : i; renderList(); });
+        return row;
+      }));
+      nmIn.addEventListener("input", renderReg); phIn.addEventListener("input", renderReg);
+      renderReg(); renderList();
+
+      const body = $("div", "scroll", [
+        $("section", "t-new", [Onb.head("신규 강사 등록"), $("div", "field__stack", [nm, ph, $("p", "t-note", ["* 반드시 강사의 실명을 입력해주세요!"])]), regWrap]),
+        $("div", "t-band"),
+        $("section", "t-list", [Onb.head("등록된 강사 목록"), $("p", "field__sub", ["강사가 없는 경우 본인을 담당강사로 지정 가능합니다."]), list]),
+      ]);
+      const close = () => sub.remove();
+      const sub = $("div", "sub-screen", [
+        R.StatusBar(),
+        R.FlowHeader({ title: "강사 불러오기", lead: "prev", onLead: close }),
+        body,
+        footer({ label: "확인", onClick: () => {
+          st.teacher = picked >= 0 ? teachers[picked] : null;
+          teacherInput.querySelector("input").value = st.teacher ? st.teacher.name : "";
+          close();
+        } }),
+      ]);
+      ui.deviceScreen.append(sub);
+    }
+
+    /* submit / popups */
+    const rules = [
+      [() => st.name, "클래스명을 입력하세요.", nameField],
+      [() => st.subjects.length, "과목 분류를 선택하세요.", subjectField],
+      [() => st.features.length, "클래스 특징을 입력하세요.", featureField],
+      [() => st.schedules.length, "수업 일정을 추가하세요.", scheduleField],
+      ...fee.rules,
+    ];
+    function submit() {
+      const miss = rules.find(([ok]) => !ok());
+      if (miss) { alert(nameField, { message: miss[1], onConfirm: () => miss[2].scrollIntoView({ block: "center", behavior: "smooth" }) }); return; }
+      store.set("className", st.name);
+      RzData.addClass({ name: st.name, subjects: st.subjects.map((k) => k.split("::")[1]), features: st.features, schedules: st.schedules, teacher: st.teacher?.name || "", teacherPhone: st.teacher?.phone || "", type: st.type || "", ...fee.value() });
+      // 002.05: 완료 popup — 추가 등록 resets the form, 등록 완료 moves on
+      alert(nameField, {
+        message: "클래스 등록이 완료되었습니다.\n클래스를 추가로 등록하시겠습니까?", messageSize: "small",
+        cancelLabel: "추가 등록", cancelColor: "green", confirmLabel: "등록 완료",
+        onCancel: () => location.reload(),
+        onConfirm: () => go("./class-done.html"),
+      });
+    }
+    const stop = () => alert(nameField, {
+      message: "클래스 등록을 중단하고\n홈 화면으로이동하시겠습니까?", messageSize: "small",
+      cancelLabel: "아니오", confirmLabel: "예", onConfirm: () => go("./home.html"),
+    });
+
+    /* mount */
+    const academy = RzData.academyName(store.get("academyName", "랠리즈 학원"));
+    const progress = $("div", "progress", ["클래스 만들기", $("b", "", ["2"]), $("span", "", ["/3"]), $("img", "", [], { src: "../assets/onboarding/step-badge.svg", alt: "" })]);
+    progress.querySelector("b").style.marginLeft = "4px";
+    const content = $("div", "pad", [
+      progress,
+      $("h1", "academy-title", [academy]),
+      nameField, subjectField, featureField, scheduleField, fee.slot, teacherField, typeField, displayField,
+      $("div", "", [], { style: "height:16px" }),
+    ]);
+    renderSubject(); renderFeatures(); renderSchedule(); fee.render();
+    const ui = shell({ title: "클래스 만들기", lead: "close", onLead: stop, body: [content], footer: footer({ label: "완료", onClick: submit, later: stop }) });
+
+    const demo = new URLSearchParams(location.search).get("state");
+    if (demo === "stop") stop();
+    if (demo === "teacher") openTeachers();
+  </script>
+</body>
+</html>

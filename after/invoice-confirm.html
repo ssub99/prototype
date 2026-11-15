@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz — 청구서 생성 확인</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [6.2.2.1.2.2.0]선택생성 확인 (360:158248) · 생성 확인 알럿 "납부 기한을 입력하세요." (360:158306) · "종료일을 입력해 주세요." (360:158368)
+    Opened from 청구서 생성 › 선택 항목 생성 (선택한 학생 인덱스는 rz.invSel). 예 → 청구서 생성 → invoice-progress.html (작업중) → invoice-done.html / 생성결과 시트.
+    납부기한은 청구월 말일로 항상 채워져 있어 "납부 기한을 입력하세요." 알럿은 걸리지 않는다(납부기한 입력 UI 디자인 없음).
+    Shared by before/ and after/ — keep both copies identical (title only differs).
+  -->
+  <style>
+    .title { margin: 32px 16px 24px; text-align: center; font: var(--rz-type-headline-bold); color: var(--rz-black); white-space: pre-line; }
+    .bills { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .bill { height: 97px; box-sizing: border-box; border-radius: 12px; background: var(--rz-gray-01); padding: 16px; }
+    .bill__klass { margin: 0; font: var(--rz-type-small01-regular); color: var(--rz-gray-05); line-height: 18px; }
+    .bill__row { margin-top: 4px; display: flex; justify-content: space-between; font: var(--rz-type-body02-bold); color: var(--rz-black); line-height: 21px; }
+    .bill__due { margin: 8px 0 0 1px; font: var(--rz-type-small01-regular); color: var(--rz-gray-05); line-height: 18px; }
+    .foot { flex: none; background: var(--rz-white); padding: 16px 16px 0; }
+    .period { border-radius: 12px; background: var(--rz-gray-01); box-shadow: inset 0 0 0 1px var(--rz-gray-02); padding: 20px 20px 18px; }
+    .period__head { display: flex; align-items: center; justify-content: space-between; height: 21px; margin-bottom: 10px; font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .period__head .rz-check { font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+    .period__row { display: flex; align-items: center; justify-content: space-between; height: 31px; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); }
+    .period__row button { border: 0; background: none; padding: 0; cursor: pointer; font: var(--rz-type-body02-regular); color: var(--rz-secondary); }
+    .period__row button:disabled { color: var(--rz-gray-04); cursor: default; }
+    .notify { display: flex; justify-content: center; padding: 16px 0; }
+    .notify .rz-check { color: var(--rz-gray-06); }
+    .bar { flex: none; height: 88px; box-sizing: border-box; padding: 16px; background: var(--rz-white); }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script src="../common/due-picker.js?v=3"></script>
+  <script src="../common/invoice.js?v=3"></script>
+  <script>
+    const R = Rallyz, I = Invoice;
+    const { $, go, store } = Onb;
+    const data0 = RzData.get();
+    if (!data0.academy) location.replace("./index.html");
+    const ym = store.get("invYm") || I.nowYm();
+    const back = () => go("./invoice-create.html?keep=1");
+    let sids = []; try { sids = JSON.parse(store.get("invSel") || "[]"); } catch { /* */ }
+    sids = sids.filter((sid) => data0.students[sid] && !I.billsOf(sid, ym).main);
+    if (!sids.length) location.replace("./invoice-create.html?keep=1");
+    const [yy, mm] = I.ymParts(ym);
+    const pad = (n) => String(n).padStart(2, "0");
+    const now = new Date();
+    const st = { noPeriod: false, start: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`, end: "", notify: false };
+    const screenEl = () => document.querySelector(".rz-device__screen");
+
+    /* ---------- summary cards ---------- */
+    const bills = $("div", "bills", sids.map((sid) => {
+      const s = data0.students[sid], c = I.calc(s, I.adjustOf(sid, ym));
+      return $("div", "bill", [
+        $("p", "bill__klass", [s.klass || "-"]),
+        $("div", "bill__row", [$("span", "", [s.name]), $("span", "", [`${I.fmt(c.total)}원${c.suffix}`])]),
+        $("p", "bill__due", [`납부기한 : ${I.longOf(I.dueFor(sid, ym))}`]),
+      ]);
+    }));
+
+    /* ---------- 수강기간 ---------- */
+    // 날짜 선택: 납부기한 선택과 같은 바텀시트 캘린더(common/due-picker.js). 내부 값은 yyyy-mm-dd, 시트는 yy-mm-dd.
+    const toShort = (d) => d.slice(2);
+    const toLong = (d) => `20${d}`;
+    function pickDate(title, current, onPick) {
+      DuePicker.open({ title, value: toShort(current || st.start), onSave: (v) => onPick(toLong(v)) }); // 시트에 하이라이트된 날짜(기본: 시작일)로 저장하면 그 날짜가 들어간다
+    }
+    const noPeriod = R.Checkbox({ label: "수강기간 없음", labelStyle: "small01_regular", onChange: (on) => { st.noPeriod = on; paintPeriod(); } });
+    const startBtn = $("button", "", [], { type: "button" }), endBtn = $("button", "", [], { type: "button" });
+    startBtn.addEventListener("click", () => pickDate("시작일 선택", st.start, (v) => { st.start = v; paintPeriod(); }));
+    endBtn.addEventListener("click", () => pickDate("종료일 선택", st.end, (v) => { st.end = v; paintPeriod(); }));
+    function paintPeriod() {
+      startBtn.textContent = st.start; endBtn.textContent = st.end || "종료일 입력";
+      startBtn.disabled = endBtn.disabled = st.noPeriod;
+    }
+    const period = $("div", "period", [
+      $("div", "period__head", ["수강기간", noPeriod]),
+      $("div", "period__row", ["시작일", startBtn]),
+      $("div", "period__row", ["종료일", endBtn]),
+    ]);
+    const notify = R.Checkbox({ label: "생성과 동시에 학생/학부모에게 알림 발송", onChange: (on) => (st.notify = on) });
+
+    /* ---------- 예 → 생성 ---------- */
+    function confirmCreate() {
+      if (!st.noPeriod && !st.end) { R.showAlert(screenEl(), { message: "종료일을 입력해 주세요." }); return; }
+      const meta = { period: st.noPeriod ? null : { start: st.start, end: st.end }, notify: st.notify };
+      const okC = new Set(), failC = new Set();
+      sids.forEach((sid) => {
+        const s = data0.students[sid];
+        // 청구금액이 0원이면(수강료 미설정) 생성 실패로 처리 — 결과 시트의 실패 탭
+        if (I.calc(s, I.adjustOf(sid, ym)).total <= 0) { failC.add(s.klass || "-"); return; }
+        I.create(s, sid, ym, "main", meta); okC.add(s.klass || "-");
+      });
+      store.set("invResult", JSON.stringify({ okClasses: [...okC], failClasses: [...failC] }));
+      go("./invoice-progress.html");
+    }
+
+    const bar = $("div", "bar", [R.ButtonGroup({ primary: "예", secondary: "아니오", secondaryColor: "grey", onPrimary: confirmCreate, onSecondary: back })]);
+    const scroll = $("div", "scroll", [$("h1", "title", [`선택한 ${sids.length}명 학생의\n${mm}월 청구서를 생성하시겠습니까 ?`]), bills]);
+    const screen = $("div", "screen", [R.StatusBar(), R.FlowHeader({ lead: "close", onLead: back }), scroll, $("div", "foot", [period, $("div", "notify", [notify])]), bar]);
+    document.getElementById("root").append(R.Device({ children: [screen] }));
+    paintPeriod();
+  </script>
+</body>
+</html>

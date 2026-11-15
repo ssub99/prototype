@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — 학생/보호자 관리</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [6.2.3.0.0.0.0]학생관리_학생보호자_메뉴클릭시 (320:139273 목록 + ⋮ 메뉴) · 클래스 수강료 생성 유도 (320:140301 학생 없음)
+    Opened from 학원관리 › 학생/보호자 관리, or 클래스 관리 › ⋮ › 학생관리 (?class=<name> preselects the class filter).
+    학생 행은 두 모드 모두 375:163209 디자인(› → 회원 상세). ?class=<name> 이면 학생 명단 모드: 헤더 "학생 명단"+클래스명, 검색만, 학생 행은 › 로 회원 상세(student-detail)로 이동, 보호자 행은 보호자 연락처를 등록한 경우에만 아래에 붙는다.
+    Shared by before/ and after/ — keep both copies identical.
+  -->
+  <style>
+    .band { flex: none; padding: 12px 16px; background: var(--rz-gray-01); display: flex; flex-direction: column; gap: 8px; }
+    .excel { display: flex; justify-content: flex-end; padding: 8px 16px; }
+    .excel button { border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
+    .members { border-top: 1px solid var(--rz-gray-02); padding-bottom: 96px; }
+    .m { position: relative; display: flex; align-items: center; gap: 8px; height: 56px; margin: 0 16px; }
+    .m--sub { margin-left: 36px; box-shadow: inset 0 -1px 0 var(--rz-gray-02); }
+    .m--last { box-shadow: inset 0 -1px 0 var(--rz-gray-02); margin-left: 16px; }
+    .m--last.m--sub { margin-left: 36px; }
+    .m__who { flex: 1; min-width: 0; }
+    .m__name { margin: 0; font: var(--rz-type-body02-bold); color: var(--rz-black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .m__phone { margin: 0; font: var(--rz-type-small01-regular); color: var(--rz-gray-05); }
+    .m .rz-btn { flex: none; }
+    .m--go { cursor: pointer; }
+    .m--go .rz-icon { flex: none; }
+    .empty { padding: 48px 16px; text-align: center; font: var(--rz-type-body02-regular); color: var(--rz-gray-05); }
+    .top { position: absolute; right: 11px; bottom: 97px; z-index: 20; border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
+    .menu { position: absolute; right: 41px; top: 56px; z-index: 30; width: 136px; padding: 16px 0; border-radius: 8px; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-03); display: flex; flex-direction: column; gap: 12px; }
+    .menu button { height: 21px; border: 0; background: none; padding: 0; cursor: pointer; font: var(--rz-type-body02-regular); color: var(--rz-black); }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script src="../common/none-page.js?v=3"></script>
+  <script>
+    const R = Rallyz;
+    const { $, go } = Onb;
+    const data = RzData.get();
+    if (!data.academy) location.replace("./index.html");
+    const academy = data.academy?.name || "";
+    const ALL = "클래스 전체";
+    const want = new URLSearchParams(location.search).get("class");
+    let klass = data.classes.some((c) => c.name === want) ? want : ALL;
+    let query = "";
+
+    const back = () => go("./academy-manage.html");
+    let menu = null;
+    const closeMenu = () => { menu?.remove(); menu = null; };
+
+    const gated = NonePage.gate({ needs: ["class", "student"], from: "student-manage" }); // 클래스 논페이지 → 학생 논페이지 (docs/none-page-policy.md)
+    const none = !!gated;
+    const listMode = !!want && data.classes.some((c) => c.name === want); // 학생 명단 (클래스에서 진입)
+    const header = listMode ? R.FlowHeader({ title: "학생 명단", subtitle: want, lead: "close", onLead: () => go("./class-manage.html") }) : R.FlowHeader({ title: "학생/보호자 관리", subtitle: academy, lead: "prev", trail: none ? null : "more", onLead: back,
+      onTrail: () => {
+        if (menu) return closeMenu();
+        // 클래스 전반 관리 · 학생 퇴원 관리 aren't designed → no action
+        const item = (label, fn) => { const b = $("button", "", [label], { type: "button" }); b.addEventListener("click", () => { closeMenu(); fn?.(); }); return b; };
+        menu = $("div", "menu", [item("학생 등록", () => go("./student-add.html?from=student-manage")), item("클래스 전반 관리"), item("학생 퇴원 관리")]);
+        screen.append(menu);
+      } });
+
+    const list = $("div", "members");
+    // everyone is 미가입 right after registration → 초대 (no action: invite funnel not built)
+    const person = (name, phone, { sub = false, last = false } = {}) => $("div", `m${sub ? " m--sub" : ""}${last ? " m--last" : ""}`, [
+      R.Icon("solid/profile-unsubscribed", { size: 32 }),
+      $("div", "m__who", [$("p", "m__name", [name]), $("p", "m__phone", [phone || "-"])]),
+      R.Button({ label: "초대", size: "t32", variant: "line", color: "blue" }),
+    ]);
+    // 학생 명단: 학생 행(› → 회원 상세)
+    const studentRow = (s, sid, last) => {
+      const r = $("div", `m m--go${last ? " m--last" : ""}`, [
+        R.Icon("solid/profile", { size: 32 }),
+        $("div", "m__who", [$("p", "m__name", [s.name]), $("p", "m__phone", [s.phone || "-"])]),
+        R.Icon("line/ic24_arrow-right", { size: 24, color: "var(--rz-gray-04)" }),
+      ], { role: "button", tabindex: "0" });
+      r.addEventListener("click", () => go(`./student-detail.html?sid=${sid}&class=${encodeURIComponent(klass === ALL ? "" : klass)}`));
+      return r;
+    };
+    function render() {
+      const d = RzData.get();
+      const rows = d.students.map((s, sid) => ({ s, sid })).filter(({ s }) => (klass === ALL || s.klass === klass) && (!query || s.name.includes(query) || (s.guardian && s.guardian !== s.phone && `${s.name} 보호자`.includes(query)))).map(({ s, sid }) => Object.assign(s, { __sid: sid }));
+      if (!rows.length) { list.replaceChildren($("p", "empty", ["검색 결과가 없습니다."])); return; }
+      list.replaceChildren(...rows.flatMap((s) => {
+        const g = !!s.guardian && s.guardian !== s.phone; // 보호자는 보호자 연락처를 등록한 경우에만 — 학생만 등록하면 학생만 보인다
+        const head = studentRow(s, s.__sid, !g); // 학생 행 = › 로 회원 상세 (학생 명단·학생/보호자 관리 공통)
+        return [head, ...(g ? [person(`${s.name} 보호자`, s.guardian, { sub: true, last: true })] : [])];
+      }));
+    }
+
+    let body, band = [], footer = null, toTop = null;
+    if (none) {
+      body = [gated];
+    } else {
+      const search = R.Search({ placeholder: "학생/보호자 이름 검색", onInput: (v) => { query = v.trim(); render(); } });
+      band = [$("div", "band", listMode ? [search] : [
+        R.Select({ value: klass, size: 40, options: [ALL, ...data.classes.map((c) => c.name)], onChange: (v) => { klass = v; render(); } }),
+        search,
+      ])];
+      body = listMode ? [list] : [$("div", "excel", [$("button", "", [R.Icon("solid/ic32_excel", { size: 32 })], { type: "button", "aria-label": "엑셀 다운로드" })]), list]; // 엑셀 download funnel not built → no action
+      footer = listMode ? null : Onb.footer({ label: "미가입 학생/보호자 일괄 초대" }); // invite funnel not built → no action
+    }
+    const scroll = $("div", "scroll", body);
+    const screen = $("div", "screen", [R.StatusBar(), header, ...band, scroll, ...(footer ? [footer] : [])]);
+    if (!none) {
+      toTop = $("button", "top", [R.Icon("btn/ic40_top", { size: 50 })], { type: "button", "aria-label": "맨 위로" });
+      toTop.addEventListener("click", () => scroll.scrollTo({ top: 0, behavior: "smooth" }));
+      screen.append(toTop);
+    }
+    document.addEventListener("click", (e) => { if (menu && !e.target.closest(".menu, .rz-header__trail")) closeMenu(); });
+    document.getElementById("root").append(R.Device({ children: [screen] }));
+    if (!none) render();
+  </script>
+</body>
+</html>

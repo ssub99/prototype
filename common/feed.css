@@ -1,0 +1,42 @@
+/* 피드(feed.html · feed-write.html · feed-detail.html) 공통 스타일 — Figma 7.1.1.2 피드 / 2.3.1.1 읽은 사람 보기 */
+.fd-band { flex: none; background: var(--rz-gray-01); padding: 16px; }
+.fd-card { background: var(--rz-white); border-bottom: 8px solid var(--rz-gray-02); cursor: pointer; }
+.fd-card:only-child { border-bottom: 0; } /* 피드가 하나뿐이면 아래 구분 박스를 보이지 않게 */
+.fd-card__ctx { margin: 0 16px; padding: 12px 0; border-bottom: 1px solid var(--rz-gray-02); font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+.fd-card__ctx b { font-weight: 700; margin-right: 6px; }
+.fd-card__who { margin: 0 16px; display: flex; align-items: center; gap: 8px; height: 64px; }
+.fd-who__txt { flex: 1; min-width: 0; }
+.fd-who__name { margin: 0; font: var(--rz-type-body02-bold); color: var(--rz-black); line-height: 21px; }
+.fd-who__name small { margin-left: 4px; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+.fd-who__date { margin: 0; font: var(--rz-type-small01-regular); color: var(--rz-gray-05); line-height: 18px; }
+.fd-reads { flex: none; border: 0; background: none; padding: 0; cursor: pointer; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+.fd-reads em { font-style: normal; color: var(--rz-primary); }
+.fd-card__text { margin: 0; padding: 4px 16px 16px; font: var(--rz-type-body02-regular); color: var(--rz-black); line-height: 24px; white-space: pre-wrap; word-break: break-word; }
+.fd-card__tags { padding: 0 16px 12px; font: 500 12px/18px var(--rz-font-sans); color: var(--rz-gray-04); display: flex; flex-wrap: wrap; gap: 8px; }
+.fd-card__foot { display: flex; align-items: center; gap: 16px; padding: 0 16px 16px; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+.fd-card__foot span { display: inline-flex; align-items: center; gap: 4px; }
+.fd-empty { padding: 96px 16px 0; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.fd-empty img { width: 165px; height: 90px; }
+.fd-empty h2 { margin: 24px 0 0; font: var(--rz-type-headline-bold); color: var(--rz-black); white-space: pre-line; }
+.fd-empty p { margin: 12px 0 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); white-space: pre-line; }
+
+/* bottom sheets */
+.fd-sheet { width: 100%; max-height: 80%; background: var(--rz-white); border-radius: 12px 12px 0 0; display: flex; flex-direction: column; }
+.fd-sheet__head { position: relative; flex: none; height: 48px; display: grid; place-items: center; border-bottom: 1px solid var(--rz-gray-02); font: var(--rz-type-body02-bold); color: var(--rz-black); }
+.fd-sheet__close { position: absolute; right: 16px; top: 14px; border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
+.fd-sheet__body { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+.fd-sheet__body::-webkit-scrollbar { display: none; }
+.fd-sheet__foot { flex: none; padding: 16px; background: var(--rz-white); }
+.fd-row { display: flex; align-items: center; gap: 8px; height: 56px; padding: 0 16px; }
+.fd-row__txt { flex: 1; min-width: 0; font: var(--rz-type-body02-bold); color: var(--rz-black); }
+.fd-row__txt small { margin-left: 4px; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+.fd-row__time { flex: none; font: 400 10px/16px var(--rz-font-sans); color: var(--rz-gray-04); }
+.fd-none { margin: 0; padding: 40px 16px; text-align: center; font: var(--rz-type-body02-regular); color: var(--rz-gray-05); }
+
+/* toast / dim modal */
+.fd-dim { position: absolute; inset: 0; z-index: 95; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; padding: 0 16px; }
+.fd-modal { width: 100%; background: var(--rz-white); border-radius: 12px; padding: 32px 16px 16px; text-align: center; box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15); }
+.fd-modal img { width: 200px; height: 208px; display: block; margin: 0 auto; }
+.fd-modal h2 { margin: 16px 0 0; font: var(--rz-type-headline-bold); color: var(--rz-black); white-space: pre-line; }
+.fd-modal p { margin: 12px 0 0; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); white-space: pre-line; line-height: 18px; }
+.fd-modal__btns { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

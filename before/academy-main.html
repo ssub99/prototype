@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — MY 학원</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [6.0.0.0.0.0.0]MY 학원 (296:127433) · …_필터조건 미충족 시 (296:127629, 클래스 없음) — opened from the 홈 학원 card.
+    Content comes from RzData (onboarding input). Shared by before/ and after/ — keep both copies identical.
+  -->
+  <style>
+    .hero { position: relative; height: 200px; background: var(--rz-gray-01); overflow: hidden; }
+    .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .close { position: absolute; left: 16px; top: 56px; z-index: 10; border: 0; padding: 0; background: none; cursor: pointer; display: inline-flex; }
+    .title { margin: 24px 16px 0; font: var(--rz-type-headline-bold); word-break: keep-all; }
+    .actions { display: grid; grid-template-columns: repeat(3, 1fr); height: 70px; margin-top: 25px; border-top: 1px solid var(--rz-gray-02); }
+    .actions button { border: 0; background: none; padding: 12px 0 0; display: flex; flex-direction: column; align-items: center; gap: 4px; font: var(--rz-type-button02-medium); color: var(--rz-black); cursor: pointer; }
+    .actions button + button { box-shadow: inset 1px 0 0 var(--rz-gray-02); }
+    .actions .rz-icon { color: var(--rz-black); }
+    .band { height: 8px; background: var(--rz-gray-02); }
+    .info { padding: 24px 16px 0; text-align: left; }
+    .info h3 { margin: 0 0 8px; font: var(--rz-type-body02-medium); color: var(--rz-gray-05); }
+    .info ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .info li { display: flex; gap: 8px; align-items: flex-start; font: var(--rz-type-body02-regular); color: var(--rz-black); }
+    .info li .rz-icon { margin-top: 2.5px; }
+    .make { padding: 24px 16px 24px; }
+    .classes { background: var(--rz-gray-01); padding: 24px 16px 24px; }
+    .classes__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+    .classes__head strong { font: var(--rz-type-body02-bold); }
+    .classes__head strong span { font-weight: 400; margin-left: 8px; }
+    .classes__filter { display: inline-flex; align-items: center; gap: 2px; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+    .classes__list { display: flex; flex-direction: column; gap: 8px; }
+    .classes__empty { margin-top: 20px; height: 267px; border-radius: 16px; background: var(--rz-white); display: flex; flex-direction: column; align-items: center; padding-top: 72px; text-align: center; }
+    .classes__empty img { width: 110px; height: 60px; }
+    .classes__empty strong { margin-top: 16px; font: var(--rz-type-body02-bold); }
+    .classes__empty p { margin: 8px 0 0; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script>
+    const R = Rallyz;
+    const { $, go } = Onb;
+    const data = RzData.get();
+    if (!data.academy) location.replace("./index.html");
+    const a = data.academy || {};
+    const uniq = (arr) => [...new Set(arr.filter(Boolean))];
+    const WEEK = ["월", "화", "수", "목", "금", "토", "일"];
+    const daysOf = (c) => { const s = new Set(c.schedules.flatMap((x) => x.days.split(",").map((d) => d.trim()))); const l = WEEK.filter((d) => s.has(d)); return l.length ? l.join("/") : "-"; };
+
+    /* hero: the academy's thumbnail (assigned on 홈) */
+    const hero = $("div", "hero", [$("img", "", [], { src: a.thumb || "../assets/thumbs/class_1.jpg", alt: "" })]);
+
+    /* 학원관리 · 학원현황 · 정보/홍보 수정 — only 학원관리 is built */
+    const act = (icon, label, onClick) => { const b = $("button", "", [R.Icon(icon, { size: 24 }), label], { type: "button" }); if (onClick) b.addEventListener("click", onClick); return b; };
+    const actions = $("div", "actions", [
+      act("line/ic24_setting", "학원관리", () => go("./academy-manage.html?from=academy-main")),
+      act("line/ic24_condition", "학원현황"),
+      act("line/ic24_modification", "정보/홍보 수정"),
+    ]);
+
+    /* 기본 정보: rows only for data entered in onboarding */
+    const rows = [
+      ["glyph/info-map", [a.address, a.addressDetail].filter(Boolean).join(" ")],
+      ["glyph/info-phone", a.phone],
+      ["glyph/info-target", (a.targets || []).join(" · ")],
+      ["glyph/info-subject", uniq(data.classes.flatMap((c) => c.subjects || [])).join(" · ")],
+      ["glyph/info-keyword", uniq(data.classes.flatMap((c) => c.features || [])).join(" · ")],
+    ].filter(([, v]) => v);
+    const info = $("section", "info", [$("h3", "", ["기본 정보"]), $("ul", "", rows.map(([ic, v]) => $("li", "", [R.Icon(ic, { size: 16 }), $("span", "", [v])])))]);
+    // 학원 소개 / 해시태그: not entered during onboarding → omitted
+
+    const make = $("div", "make", [R.Button({ label: "클래스 만들기", size: 48, onClick: () => go("./class-new.html?from=academy-main") })]);
+
+    /* 클래스 목록 */
+    const nodes = [hero, $("h1", "title", [a.name || ""]), actions, $("div", "band"), info, make];
+    const list = data.classes.length
+      ? $("div", "classes__list", data.classes.map((c) => R.ClassCard({ variant: "detail", title: c.name, chips: (c.subjects || []).slice(0, 3), days: daysOf(c), thumb: c.thumb || "../assets/thumbs/class_1.jpg" })))
+      : $("div", "classes__empty", [ // 296:127629
+          $("img", "", [], { src: "../assets/onboarding/feed-empty.svg", alt: "" }),
+          $("strong", "", ["생성된 클래스가 없습니다."]),
+          $("p", "", ["클래스를 만들어 수업과 학생을 관리해 보세요."]),
+        ]);
+    nodes.push($("div", "band"), $("section", "classes", [
+      $("div", "classes__head", [$("strong", "", ["클래스 목록", $("span", "", [`${data.classes.length}개`])]), $("span", "classes__filter", [R.Icon("glyph/ux-filter-24", { size: 24 }), "필터"])]),
+      list,
+    ]));
+
+    const close = $("button", "close", [R.Icon("solid/ic24_close-type03", { size: 24 })], { type: "button", "aria-label": "닫기" });
+    close.addEventListener("click", () => go("./home.html")); // 학원 메인 닫기는 항상 홈 — history.back()이면 학원관리 → 학원 메인 → 학원관리가 끝없이 반복된다
+    const screen = $("div", "screen", [R.StatusBar(), $("div", "scroll", nodes)]);
+    const device = R.Device({ children: [screen] });
+    device.querySelector(".rz-device__screen").append(close);
+    document.getElementById("root").append(device);
+  </script>
+</body>
+</html>

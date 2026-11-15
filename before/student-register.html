@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — 학생 등록</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: 002.07.학생등록1 (296:125258, 클래스 미선택) · 002.07.학생등록2 (296:125391, 클래스 선택 후)
+           002.07.학생등록/기존학생불러오기클릭시 (296:125754) · 002.07.1.학생등록_일괄등록 (296:125313 / 125350)
+           002.08.학생등록완료 (296:125463)
+  -->
+  <style>
+    .top { padding: 0 16px; }
+    .tab-body { padding: 0 16px 16px; }
+    .tab-body > :first-child { margin-top: 16px; }
+    .field__label em { font: 700 10px/15px var(--rz-font-sans); }
+    .radios { display: grid; grid-template-columns: 172px 1fr; }
+    .radios--tight { display: flex; gap: 37px; }
+    .pair { display: grid; grid-template-columns: 121px 1fr; gap: 8px; }
+    .pair--40 { grid-template-columns: 122px 1fr; }
+    .rz-input--40.rz-select, .pair--40 .rz-input { height: 40px; }
+    .date-wrap { position: relative; }
+    .date-wrap .rz-calendar { position: absolute; top: 56px; left: 0; z-index: 10; }
+    .tuition { margin-top: 8px; display: flex; gap: 32px; }
+    .tuition span:first-child { color: var(--rz-gray-06); }
+    .tuition span:last-child { color: var(--rz-black); }
+
+    /* 학원비 할인 */
+    .discount-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 48px; margin-top: 32px; border: 0; background: none; padding: 0; cursor: pointer; font: var(--rz-type-body01-bold); color: var(--rz-black); }
+    .discount-toggle .rz-icon { color: var(--rz-gray-07); }
+    .discount-info { margin: 0; padding: 16px; border-radius: 12px; background: var(--rz-gray-01); font: var(--rz-type-body02-regular); color: var(--rz-gray-05); }
+    .discount { margin-top: 16px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--rz-gray-03); overflow: hidden; }
+    .discount__row { display: flex; align-items: center; justify-content: space-between; padding: 17px 16px 0; font: var(--rz-type-body02-medium); }
+    .discount__before { padding-bottom: 16px; border-bottom: 1px solid var(--rz-gray-03); }
+    .discount__before b { font-weight: 500; color: var(--rz-blue-03); }
+    .discount__block { padding: 0 16px; }
+    .discount__label { margin: 16px 0 8px; font: var(--rz-type-body02-medium); color: var(--rz-black); }
+    .discount__means { display: grid; grid-template-columns: auto auto 151px; align-items: center; gap: 12px; }
+    .discount__means .rz-input input { text-align: right; }
+    .discount__after { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; height: 53px; padding: 0 16px; background: var(--rz-gray-01); font: var(--rz-type-body02-medium); }
+    .discount__after strong { font: var(--rz-type-headline-bold); color: var(--rz-primary); }
+    .discount__after small { font: var(--rz-type-body02-medium); color: var(--rz-gray-06); margin-left: 3px; }
+
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script>
+    const R = Rallyz;
+    const { $, field, shell, footer, alert, store, go } = Onb;
+
+    const academy = RzData.academyName(store.get("academyName", "랠리즈 학원"));
+    const classNames = RzData.classNames();
+    const className = classNames[classNames.length - 1] || store.get("className", "월수금 오후반");
+    const TUITION = 100000;
+    const won = (n) => `${Math.max(0, Math.round(n)).toLocaleString("ko-KR")}원`;
+    const t = new Date();
+    const fmtDate = (y, m, d) => `${y}.${m}.${d}`;
+    const fresh = () => ({
+      klass: "", name: "", phone: "", joined: fmtDate(t.getFullYear(), t.getMonth() + 1, t.getDate()), payDay: "", gender: null,
+      guardianType: "", guardian: "", school: "", gradeGroup: "", grade: "", nickname: "",
+      discountOpen: false, discountMode: null, discountValue: "", discountReason: "", file: null,
+    });
+    let st = fresh();
+    let progress = null;
+
+    /* ---------- shared field builders ---------- */
+    function dateField() {
+      const wrap = $("div", "date-wrap");
+      const draw = () => wrap.replaceChildren(R.DateField({ kind: "date", width: "full", value: st.joined, onClick: () => {
+        const open = wrap.querySelector(".rz-calendar");
+        if (open) { open.remove(); return; }
+        const [y, m, d] = st.joined.split(".").map(Number);
+        wrap.append(R.Calendar({ year: y, month: m, selected: d, onSelect: ({ year, month, day }) => { st.joined = fmtDate(year, month, day); draw(); } }));
+      } }));
+      draw();
+      return field("학원 입학일", { required: true }, wrap);
+    }
+    const GRADES = { "초등": 6, "중등": 3, "고등": 3, "기타": 0 };
+    function gradeField(size) {
+      const row = $("div", size === 40 ? "pair pair--40" : "pair");
+      const draw = () => {
+        const n = GRADES[st.gradeGroup] || 0;
+        row.replaceChildren(
+          R.Select({ value: st.gradeGroup, placeholder: "구분", size, options: Object.keys(GRADES), onChange: (v) => { st.gradeGroup = v; st.grade = ""; draw(); } }),
+          R.Select({ value: st.grade, placeholder: size === 40 ? "" : "선택", size, disabled: !n && size !== 40, options: Array.from({ length: n }, (_, i) => `${i + 1}학년`), onChange: (v) => (st.grade = v) }),
+        );
+      };
+      draw();
+      return field("학년", {}, row);
+    }
+    function guardianField(label, size) {
+      const row = $("div", size === 40 ? "pair pair--40" : "pair");
+      const input = R.Input({ placeholder: size === 40 ? "보호자 휴대폰번호 입력" : "보호자 휴대폰 번호 입력", name: "guardianPhone", type: "tel", size: size === 40 ? 40 : 48, disabled: size !== 40 && !st.guardianType, onInput: (v) => (st.guardian = v.trim()) });
+      const sel = R.Select({ value: st.guardianType, placeholder: "구분", size, options: ["부", "모", "기타"], onChange: (v) => {
+        st.guardianType = v;
+        const inp = input.querySelector("input"); inp.disabled = false; input.classList.remove("is-disabled");
+      } });
+      row.append(sel, input);
+      return field(label, {}, row);
+    }
+    const genderField = (tight) => field("성별", { required: true }, $("div", tight ? "radios radios--tight" : "radios", ["남자", "여자"].map((g) => R.Radio({ label: g, name: "gender", value: g, checked: st.gender === g, onChange: (v) => (st.gender = v) }))));
+    const schoolField = () => field("학교", {}, R.Input({ placeholder: "학교 입력", name: "school", onInput: (v) => (st.school = v.trim()) }));
+
+    /* ---------- class select (drives form 1 ↔ form 2) ---------- */
+    function classField(size) {
+      const sel = R.Select({ value: st.klass, placeholder: "클래스 선택", size, options: classNames.length ? classNames : [className], onChange: (v) => { st.klass = v; renderIndividual(); } });
+      const f = field("클래스", { required: true }, sel);
+      if (st.klass) f.append($("div", "rz-input tuition", [$("span", "", ["학원비"]), $("span", "", [won(TUITION)])]));
+      return f;
+    }
+
+    /* ---------- 학원비 할인 (form 2) ---------- */
+    function discountSection() {
+      const sec = $("section", "");
+      const draw = () => {
+        const toggle = $("button", "discount-toggle", ["학원비 할인", R.Icon(st.discountOpen ? "glyph/chevron-up" : "glyph/chevron-down", { size: 24 })], { type: "button", "aria-expanded": String(st.discountOpen) });
+        toggle.addEventListener("click", () => { st.discountOpen = !st.discountOpen; draw(); });
+        const kids = [toggle, $("p", "discount-info", ["개별 학생에게 제공되는 형제 할인, 재등록 할인 등 학원별 개별 프로모션, 이벤트에 활용할 수 있습니다."])];
+        if (st.discountOpen) {
+          const v = Number(st.discountValue || 0);
+          const after = st.discountMode === "rate" ? TUITION * (1 - Math.min(v, 100) / 100) : st.discountMode === "amount" ? TUITION - v : TUITION;
+          const amount = R.Input({ placeholder: st.discountMode === "rate" ? "0%" : "0원", name: "discountValue", value: st.discountValue, disabled: !st.discountMode, onInput: (x, e) => { const clean = x.replace(/[^0-9]/g, ""); if (clean !== x) e.target.value = clean; st.discountValue = clean; afterEl.replaceChildren(...afterParts()); } });
+          amount.querySelector("input").inputMode = "numeric";
+          const afterParts = () => {
+            const n = Number(st.discountValue || 0);
+            const a = st.discountMode === "rate" ? TUITION * (1 - Math.min(n, 100) / 100) : st.discountMode === "amount" ? TUITION - n : TUITION;
+            return ["할인 후", $("span", "", [$("strong", "", [Math.max(0, Math.round(a)).toLocaleString("ko-KR")]), $("small", "", ["원"])])];
+          };
+          const afterEl = $("div", "discount__after", afterParts());
+          kids.push($("div", "discount", [
+            $("div", "discount__row discount__before", ["할인 전", $("b", "", [won(TUITION)])]),
+            $("div", "discount__block", [
+              $("p", "discount__label", ["할인 수단"]),
+              $("div", "discount__means", [
+                R.Radio({ label: "할인액", name: "discountMode", value: "amount", checked: st.discountMode === "amount", onChange: () => { st.discountMode = "amount"; st.discountValue = ""; draw(); } }),
+                R.Radio({ label: "할인율", name: "discountMode", value: "rate", checked: st.discountMode === "rate", onChange: () => { st.discountMode = "rate"; st.discountValue = ""; draw(); } }),
+                amount,
+              ]),
+              $("p", "discount__label", ["할인 사유"]),
+              R.Input({ placeholder: "사유 입력", name: "discountReason", value: st.discountReason, onInput: (x) => (st.discountReason = x) }),
+            ]),
+            afterEl,
+          ]));
+          void after;
+        }
+        sec.replaceChildren(...kids);
+      };
+      draw();
+      return sec;
+    }
+
+    /* ---------- 기존 학생 불러오기 (bottom sheet) ---------- */
+    const STUDENTS = { [className]: [["김랠리", "010-1234-1234"], ["이랠리", "010-2345-2345"], ["박랠리", "010-3456-3456"], ["최랠리", "010-4567-4567"]], "기초영어": [["정랠리", "010-5678-5678"], ["한랠리", "010-6789-6789"]] };
+    function openSheet() {
+      let tab = 0, klass = Object.keys(STUDENTS)[0], q = "", picked = -1;
+      const list = $("div", "sheet__list");
+      const body = $("div", "sheet__body");
+      const drawList = () => {
+        const rows = STUDENTS[klass].filter(([n]) => !q || n.includes(q));
+        list.replaceChildren(...rows.map(([n, ph], i) => {
+          const row = R.MemberRow({ name: n, meta: ph, select: "radio", selected: i === picked, figmaName: i === picked ? "list/student_selected" : "list/student_default" });
+          row.addEventListener("click", (e) => { e.preventDefault(); picked = i; drawList(); });
+          return row;
+        }));
+      };
+      const drawBody = () => {
+        const tabs = R.Tabs({ type: "tap02", items: ["등록된 학생", "새로운 학생"], selected: tab, onChange: (i) => { tab = i; picked = -1; drawBody(); } });
+        const kids = [tabs];
+        if (tab === 0) {
+          kids.push(
+            R.Select({ value: klass, size: 40, options: Object.keys(STUDENTS), onChange: (v) => { klass = v; picked = -1; drawList(); } }),
+            R.Search({ placeholder: "직원/강사 검색", onInput: (v) => { q = v.trim(); picked = -1; drawList(); } }),
+            list,
+          );
+          drawList();
+        }
+        body.replaceChildren(...kids);
+      };
+      drawBody();
+      const close = () => dim.remove();
+      const sheet = $("div", "sheet", [
+        $("div", "sheet__head", ["기존 학생 불러오기", (() => { const b = $("button", "sheet__close", [R.Icon("line/ic24_close-type01", { size: 20, color: "var(--rz-gray-07)" })], { type: "button", "aria-label": "닫기" }); b.addEventListener("click", close); return b; })()]),
+        body,
+        footer({ label: "완료", onClick: () => {
+          if (tab === 0 && picked >= 0) {
+            const [n, ph] = STUDENTS[klass].filter(([x]) => !q || x.includes(q))[picked];
+            st.name = n; st.phone = ph; renderIndividual();
+          }
+          close();
+        } }),
+      ]);
+      const dim = $("div", "sheet-dim", [sheet]);
+      dim.addEventListener("click", (e) => e.target === dim && close());
+      ui.deviceScreen.append(dim);
+    }
+
+    /* ---------- 개별 등록 ---------- */
+    const individual = $("div", "tab-body");
+    let rules = [];
+    function renderIndividual() {
+      const nodes = [];
+      if (!st.klass) {
+        /* form 1 — 002.07.학생등록1 */
+        const cls = classField(48);
+        const nameF = field("학생 이름", { required: true, trail: R.Button({ label: "연락처 가져오기", size: "t24", variant: "line", color: "grey" }) },
+          R.Input({ placeholder: "학생 이름 입력", name: "studentName", value: st.name, onInput: (v) => (st.name = v.trim()) }));
+        nameF.style.marginTop = "39px";
+        const phoneF = field("학생 휴대폰 번호", { required: true }, [R.Input({ placeholder: "학생 휴대폰 번호 입력", name: "studentPhone", type: "tel", value: st.phone, onInput: (v) => (st.phone = v.trim()) }), $("p", "field__hint", ["휴대폰이 없는 경우 보호자 휴대폰번호를 입력해주세요."])]);
+        const dateF = dateField(); dateF.style.marginTop = "30px";
+        const payF = field("수강료 납부일", { required: true }, R.Select({ value: st.payDay, placeholder: "납부일 선택", size: 48, options: [...Array.from({ length: 31 }, (_, i) => `${i + 1}일`), "말일"], onChange: (v) => (st.payDay = v) }));
+        nodes.push(cls, nameF, phoneF, dateF, payF, genderField(false), guardianField("보호자 휴대폰 번호", 48), schoolField(), gradeField(48));
+        rules = [[() => st.klass, "클래스를 선택하세요.", cls]];
+        cls.style.marginTop = "24px";
+      } else {
+        /* form 2 — 002.07.학생등록2 (after a class is chosen) */
+        const cls = classField(40);
+        const existing = R.Button({ label: "기존 학생 불러오기", size: "t32", variant: "line", color: "grey", onClick: openSheet });
+        existing.style.setProperty("--bd", "var(--rz-gray-04)");
+        const nameF = field("이름", { required: true, trail: existing }, R.Input({ placeholder: "이름 입력", name: "studentName", value: st.name, onInput: (v) => (st.name = v.trim()) }));
+        nameF.style.marginTop = "39px";
+        const phoneF = field("휴대폰 번호", { required: true }, [R.Input({ placeholder: "휴대폰 번호 입력", name: "studentPhone", type: "tel", value: st.phone, onInput: (v) => (st.phone = v.trim()) }), $("p", "field__hint field__hint--small", ["학생 휴대폰이 없는 경우 보호자 휴대폰번호를 입력해주세요."])]);
+        const nickF = field("닉네임", {}, [R.Input({ placeholder: "닉네임 입력", name: "nickname", value: st.nickname, onInput: (v) => (st.nickname = v.trim()) }), $("p", "field__hint field__hint--small", ["학원 및 클래스에서 사용할 닉네임을 입력해주세요. (예: James)"])]);
+        const dateF = dateField();
+        const genderF = genderField(true);
+        nodes.push(cls, nameF, phoneF, dateF, genderF, guardianField("보호자", 40), schoolField(), gradeField(40), nickF, discountSection());
+        rules = [
+          [() => st.klass, "클래스를 선택하세요.", cls],
+          [() => st.name, "이름을 입력하세요.", nameF],
+          [() => st.phone, "휴대폰 번호를 입력하세요.", phoneF],
+          [() => st.joined, "학원 입학일을 선택하세요.", dateF],
+          [() => st.gender, "성별을 선택하세요.", genderF],
+        ];
+      }
+      individual.replaceChildren(...nodes);
+      if (progress) progress.style.marginTop = st.klass ? "8px" : ""; // 002.07.학생등록2 sits 8px under the header
+      if (ui) ui.header.querySelector(".rz-header__subtitle").textContent = st.klass || academy;
+    }
+
+    /* ---------- submit ---------- */
+    const finalTuition = () => {
+      const n = Number(st.discountValue || 0);
+      const a = st.discountMode === "rate" ? TUITION * (1 - Math.min(n, 100) / 100) : st.discountMode === "amount" ? TUITION - n : TUITION;
+      return Math.max(0, Math.round(a));
+    };
+    function done(kind = "individual") {
+      if (kind !== "demo") RzData.addStudent({ name: st.name, phone: st.phone, guardian: st.guardian || "", klass: st.klass, tuition: finalTuition() });
+      alert(individual, {
+        message: "학생 등록이 완료되었습니다.\n학생을 추가로 등록하시겠습니까?", messageSize: "small",
+        cancelLabel: "추가 등록", cancelColor: "green", confirmLabel: "홈 화면으로 이동",
+        onCancel: () => { const k = st.klass; st = fresh(); st.klass = k; renderIndividual(); ui.scroll.scrollTop = 0; },
+        onConfirm: () => go("./home.html"),
+      });
+    }
+    function submitIndividual() {
+      const miss = rules.find(([ok]) => !ok());
+      if (miss) { alert(individual, { message: miss[1], onConfirm: () => miss[2].scrollIntoView({ block: "center", behavior: "smooth" }) }); return; }
+      done();
+    }
+
+    /* ---------- shell ---------- */
+    let ui = null;
+    progress = $("div", "progress top", ["학생 등록", $("b", "", ["3"]), $("span", "", ["/3"]), $("img", "", [], { src: "../assets/onboarding/step-badge.svg", alt: "" })]);
+    const indFooter = footer({ label: "완료", onClick: submitIndividual, later: () => go("./home.html") });
+    renderIndividual();
+    ui = shell({ title: "학생 등록", subtitle: academy, lead: "close", onLead: () => go("./home.html"), body: [individual], footer: indFooter });
+    ui.scroll.before(progress);
+
+    const demo = new URLSearchParams(location.search).get("state");
+    if (demo === "class") { st.klass = className; renderIndividual(); }
+    if (demo === "sheet") { st.klass = className; renderIndividual(); openSheet(); }
+    if (demo === "done") done("demo");
+  </script>
+</body>
+</html>

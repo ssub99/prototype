@@ -1,0 +1,22 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_360_158721)">
+<path d="M60 120C93.1371 120 120 93.1371 120 60C120 26.8629 93.1371 0 60 0C26.8629 0 0 26.8629 0 60C0 93.1371 26.8629 120 60 120Z" fill="#E9E9E9"/>
+<rect x="32" y="45" width="56" height="80" rx="8" fill="white"/>
+<rect x="32" y="24" width="64" height="96" rx="12" fill="#B1B1B1"/>
+<rect x="28" y="24" width="64" height="96" rx="12" fill="white"/>
+<circle cx="60" cy="52" r="12" fill="#FF3434"/>
+<path d="M59.0763 53.68H60.9163L61.3323 48.272L61.4283 45.728H58.5643L58.6603 48.272L59.0763 53.68ZM59.9883 58.224C60.9803 58.224 61.6843 57.44 61.6843 56.448C61.6843 55.456 60.9803 54.688 59.9883 54.688C59.0123 54.688 58.3083 55.456 58.3083 56.448C58.3083 57.44 59.0123 58.224 59.9883 58.224Z" fill="white"/>
+<rect x="68" y="96" width="16" height="4" rx="1" fill="#D9D9D9"/>
+<rect x="36" y="80" width="16" height="4" rx="1" fill="#D9D9D9"/>
+<rect x="36" y="96" width="28" height="4" rx="1" fill="#D9D9D9"/>
+<rect x="56" y="80" width="28" height="4" rx="1" fill="#D9D9D9"/>
+<rect x="36" y="88" width="48" height="4" rx="1" fill="#D9D9D9"/>
+<rect x="36" y="72" width="48" height="4" rx="1" fill="#D9D9D9"/>
+<rect x="36" y="104" width="48" height="4" rx="1" fill="#D9D9D9"/>
+</g>
+<defs>
+<clipPath id="clip0_360_158721">
+<rect width="120" height="120" rx="60" fill="white"/>
+</clipPath>
+</defs>
+</svg>

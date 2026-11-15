@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz — 납부 관리</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [6.2.2.2.1.0.0]납부 관리_미납목록_직접설정 (360:159182) — 미납 목록 · 내역 없음 논페이지 (360:162383). 납부요청 확인 (360:159036 선택 · 360:159070 일괄) → payment-confirm.html,
+           작업중 (360:159292) → payment-progress.html, 발송 완료 (360:159267) → payment-done.html, 납부요청 결과 시트 성공/실패 (360:159298 · 360:159434) = 이 화면 ?result=1.
+    Opened from 학원관리 › 청구/납부 › 납부 관리. 납부요청: 선택한 청구서가 있으면 선택 발송, 없으면 미발송 전체 일괄 발송.
+    생성취소 컨펌 360:162071 · 완료 알럿 360:162162. 미연결(디자인 없음): 납부 완료 탭, 납부처리, 상세보기, 정렬/필터/다운로드.
+    Shared by before/ and after/ — keep both copies identical (title only differs).
+  -->
+  <style>
+    .ym { height: 56px; border-radius: 12px; background: var(--rz-white); display: flex; align-items: center; justify-content: space-between; }
+    .ym__nav { width: 48px; height: 48px; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: pointer; }
+    .ym__title { flex: 1; height: 48px; border: 0; background: none; padding: 0; cursor: pointer; font: var(--rz-type-body01-bold); color: var(--rz-gray-06); }
+    .ym__title em { font-style: normal; color: var(--rz-primary); }
+    .filters { display: grid; grid-template-columns: 120px 1fr; gap: 8px; }
+    .none--pick { padding-top: 96px; }
+    .none h2 { white-space: pre-line; }
+    .band { flex: none; background: var(--rz-gray-01); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .meta { flex: none; height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: var(--rz-white); border-bottom: 1px solid var(--rz-gray-02); font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+    .meta__btns { display: flex; gap: 8px; }
+    .meta__btns button { border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
+    .list { padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 8px; }
+    .none { padding-top: 56px; }
+    .card { border-radius: 12px; background: var(--rz-gray-01); padding: 16px; }
+    .card__head { display: flex; align-items: center; gap: 8px; height: 24px; margin-bottom: 16px; }
+    .card__name { flex: 1; min-width: 0; font: var(--rz-type-body02-bold); color: var(--rz-gray-07); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card__in { border-radius: 12px; background: var(--rz-white); padding: 0 16px 22px; }
+    .card__klass { height: 50px; box-sizing: border-box; padding: 16px 0; border-bottom: 1px solid var(--rz-gray-02); font: var(--rz-type-small01-medium); color: var(--rz-gray-04); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card__title { margin-top: 17px; height: 18px; display: flex; align-items: center; gap: 8px; font: var(--rz-type-small01-medium); color: var(--rz-gray-06); }
+    .card__chip { display: inline-flex; align-items: center; height: 16px; border-radius: 4px; background: var(--rz-blue-03); color: var(--rz-white); padding: 0 4px 0 0; font: 700 10px/15px var(--rz-font-sans); }
+    .card__detail { margin-left: auto; border: 0; background: none; padding: 0; display: inline-flex; align-items: center; gap: 0; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); cursor: pointer; }
+    .card__amount { margin-top: 4px; display: flex; justify-content: space-between; font: var(--rz-type-body02-bold); color: var(--rz-gray-07); line-height: 21px; }
+    .card__rows { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--rz-gray-03); font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+    .card__rows > div { display: flex; justify-content: space-between; line-height: 18px; }
+    .card__rows .late { color: var(--rz-red); }
+    .card__period { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--rz-gray-03); display: flex; justify-content: space-between; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); line-height: 18px; margin-bottom: -8px; }
+    .count { flex: none; height: 48px; background: var(--rz-gray-01); display: grid; place-items: center; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+    .bar { flex: none; height: 88px; box-sizing: border-box; padding: 16px; background: var(--rz-white); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .rz-btn--red { --fg: #FF3434; --bd: #FF3434; }
+
+    .res { width: 100%; height: 648px; border-radius: 12px 12px 0 0; background: var(--rz-white); display: flex; flex-direction: column; }
+    .res__head { position: relative; flex: none; height: 48px; display: grid; place-items: center; font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .res__close { position: absolute; right: 16px; top: 14px; border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
+    .res__body { flex: 1; min-height: 0; overflow-y: auto; padding: 64px 16px 24px; text-align: center; scrollbar-width: none; }
+    .res__body img { width: 120px; height: 120px; display: block; margin: 0 auto; }
+    .res__body h2 { margin: 32px 0 0; font: var(--rz-type-headline-bold); color: var(--rz-black); white-space: pre-line; }
+    .res__body p { margin: 16px 0 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); white-space: pre-line; }
+    .res__chips { margin-top: 32px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .res__chip { height: 32px; max-width: 100%; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 16px; background: var(--rz-gray-02); font: var(--rz-type-small01-medium); color: var(--rz-gray-05); }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script src="../common/time-picker.js?v=3"></script>
+  <script src="../common/ym-picker.js?v=3"></script>
+  <script src="../common/invoice.js?v=3"></script>
+  <script>
+    const R = Rallyz, I = Invoice;
+    const { $, go, store } = Onb;
+    const data0 = RzData.get();
+    if (!data0.academy) location.replace("./index.html");
+    const academy = data0.academy?.name || "";
+    const KIND_OPT = ["기간반", "회차반"];
+    /* 처음 진입에서는 청구년월·클래스 구분을 비워 선택부터 시작한다. 확인·완료에서 돌아올 때(?keep=1 · ?result=1)만 직전 선택을 이어간다. */
+    const qs = new URLSearchParams(location.search);
+    if (!qs.has("keep") && !qs.has("result")) { store.set("payYm", ""); store.set("payKind", ""); store.set("payKlass", ""); }
+    const st = {
+      ym: store.get("payYm") || I.nowYm(),
+      kind: KIND_OPT.includes(store.get("payKind")) ? store.get("payKind") : "",
+      klass: store.get("payKlass") || "", q: "", selected: new Set(),
+    };
+    const persist = () => { store.set("payYm", st.ym); store.set("payKind", st.kind); store.set("payKlass", st.klass); };
+    const kindKey = () => (st.kind === "회차반" ? "회차" : "기간");
+    const screenEl = () => document.querySelector(".rz-device__screen");
+    const labelOf = (s) => { const c = I.klassOf(s); return `${s.klass || "-"}${c?.type ? `(${c.type})` : ""}`; };
+
+    const header = R.FlowHeader({ title: "납부 관리", subtitle: academy, lead: "close", onLead: () => go("./academy-manage.html") });
+    const tabs = R.Tabs({ type: "tap01", items: ["미납 목록", "납부 완료"], selected: 0 });
+    tabs.addEventListener("click", (e) => { if (e.target.closest("button") === tabs.children[1]) e.stopPropagation(); }, true); // 납부 완료 탭 디자인 없음
+
+    /* ---------- band / meta ---------- */
+    const search = R.Search({ placeholder: "학생명 또는 관리용 이름 입력", onInput: (v) => { st.q = v.trim(); renderList(); } });
+    const band = $("div", "band");
+    const meta = $("div", "meta"); // 정렬·기간 필터·다운로드 디자인 없음 → 동작 없음
+    const classOptions = () => data0.classes.filter((c) => I.kindOf(c) === kindKey()).map((c) => c.name);
+    function monthCard() { // 청구서 생성과 같은 청구년월 선택 (351:150069 · 351:151124)
+      const [y, m] = I.ymParts(st.ym);
+      const nav = (dir) => {
+        const b = $("button", "ym__nav", [R.Icon(dir < 0 ? "line/ic24_arrow-left" : "line/ic24_arrow-right", { size: 24, color: "var(--rz-gray-04)" })], { type: "button", "aria-label": dir < 0 ? "이전 달" : "다음 달" });
+        b.addEventListener("click", () => { st.ym = I.shiftYm(st.ym, dir); st.selected.clear(); persist(); render(); });
+        return b;
+      };
+      const title = $("button", "ym__title", [`${y}년 `, $("em", "", [`${m}월`]), " 미납 청구서"], { type: "button" });
+      title.addEventListener("click", () => YmPicker.open({ year: y, month: m, onConfirm: (yy, mm) => { st.ym = I.ymKey(yy, mm); st.selected.clear(); persist(); render(); } }));
+      return $("div", "ym", [nav(-1), title, nav(1)]);
+    }
+    function filters() {
+      return $("div", "filters", [
+        R.Select({ value: st.kind, placeholder: "클래스 구분", size: 40, options: KIND_OPT, onChange: (v) => { st.kind = v; st.klass = ""; st.selected.clear(); persist(); render(); } }),
+        R.Select({ value: st.klass || (st.kind ? "전체 클래스" : ""), placeholder: "전체 클래스", size: 40, disabled: !st.kind, options: ["전체 클래스", ...classOptions()], onChange: (v) => { st.klass = v === "전체 클래스" ? "" : v; st.selected.clear(); persist(); renderList(); } }),
+      ]);
+    }
+    function renderBand() { band.replaceChildren(monthCard(), filters(), ...(st.kind ? [search] : [])); }
+
+    /* ---------- cards ---------- */
+    function rows() {
+      return I.unpaid().filter(({ b, s }) => b.ym === st.ym && I.kindOf(I.klassOf(s)) === kindKey() && I.klassOf(s) && (!st.klass || s.klass === st.klass) && (!st.q || s.name.includes(st.q)));
+    }
+    function card({ b, s }) {
+      const c = b.calc, late = b.due < I.today();
+      const cb = R.Checkbox({ checked: st.selected.has(b.id), onChange: (on) => { on ? st.selected.add(b.id) : st.selected.delete(b.id); renderCount(); } });
+      cb.setAttribute("aria-label", `${s.name} 선택`);
+      const title = $("div", "card__title", [`${I.ymLabel(b.ym)} 청구서`]);
+      if (b.kind === "extra") title.append($("span", "card__chip", [R.Icon("line/16_receipt", { size: 16 }), "추가청구서"]));
+      title.append($("button", "card__detail", ["상세보기", R.Icon("line/ic24_arrow-right", { size: 16, color: "var(--rz-gray-06)" })], { type: "button" })); // 상세보기 디자인 없음
+      const inner = $("div", "card__in", [
+        $("div", "card__klass", [labelOf(s)]),
+        title,
+        $("div", "card__amount", [$("span", "", ["미납금액"]), $("span", "", [`${I.fmt(c.total)}원`])]),
+        $("div", "card__rows", [
+          $("div", "", [$("span", "", ["생성일"]), $("span", "", [I.longOf(b.createdAt)])]),
+          $("div", "", [$("span", "", ["발송일"]), $("span", "", [b.sentAt ? I.longOf(b.sentAt) : "-"])]),
+          $("div", "", [$("span", "", ["납부기한"]), $("span", late ? "late" : "", [I.longOf(b.due)])]),
+        ]),
+      ]);
+      if (b.period) inner.append($("div", "card__period", [$("span", "", ["수강기간"]), $("span", "", [`${I.longOf(b.period.start.slice(2))} ~ ${I.longOf(b.period.end.slice(2))}`])]));
+      return $("article", "card", [
+        $("div", "card__head", [cb, $("span", "card__name", [s.name]), R.Button({ label: "납부처리", size: "t24", color: "grey" })]), // 납부처리 디자인 없음
+        inner,
+      ]);
+    }
+
+    const body = $("div", "");
+    const countEl = $("div", "count");
+    // 개선 후: 납부요청은 항목을 하나 이상 체크해야 켜진다(기본 비활성). 개선 전은 선택이 없으면 미발송 전체 일괄 발송(기존 동작).
+    const REQ_NEEDS_SELECTION = RzData.version === "after";
+    let reqBtn = null;
+    function renderCount() {
+      countEl.textContent = `${st.selected.size}건 선택됨`;
+      if (reqBtn && REQ_NEEDS_SELECTION) { const off = st.selected.size === 0; reqBtn.disabled = off; reqBtn.classList.toggle("is-disabled", off); reqBtn.setAttribute("aria-disabled", String(off)); }
+    }
+    function renderList() {
+      if (!st.kind) { // 청구년월·클래스 구분을 고르기 전 — 조회하지 않고 선택부터 (351:150069)
+        meta.replaceChildren(); meta.style.display = "none";
+        body.replaceChildren($("div", "none none--pick", [$("img", "", [], { src: "../assets/onboarding/class-empty.svg", alt: "" }), $("h2", "", ["납부 내역을 조회할 클래스를\n선택하세요"])]));
+        countEl.style.display = bar.style.display = "none";
+        return;
+      }
+      meta.style.display = "";
+      const r = rows();
+      const dues = r.map(({ b }) => b.due).sort();
+      const f = (d) => `${d.slice(0, 2)}년 ${d.slice(3, 5)}월 ${d.slice(6, 8)}일`;
+      meta.replaceChildren($("span", "", [r.length ? `납부기한순･${f(dues[0])} - ${f(dues[dues.length - 1])}` : ""]),
+        $("div", "meta__btns", [R.Icon("line/ic32_filter", { size: 32 }), R.Icon("solid/ic32_allList", { size: 32 })]));
+      // 내역 없음(미납이 없거나 조건에 맞는 내역이 없을 때) → 논페이지 (360:162383). 선택 개수 바·하단 버튼은 숨긴다.
+      body.replaceChildren(r.length ? $("div", "list", r.map(card)) : $("div", "none", [$("img", "", [], { src: "../assets/onboarding/class-empty.svg", alt: "" }), $("h2", "", ["조건에 맞는 미납 내역이 없습니다."])]));
+      countEl.style.display = bar.style.display = r.length ? "" : "none";
+      renderCount();
+    }
+
+    /* ---------- 납부요청 ---------- */
+    function request() {
+      if (REQ_NEEDS_SELECTION && !st.selected.size) return; // 개선 후: 선택 없이는 누를 수 없다
+      const all = rows(); // 지금 조회 중인 청구년월·클래스 범위
+      let targets, mode;
+      if (st.selected.size) { targets = all.filter(({ b }) => st.selected.has(b.id)); mode = "sel"; }
+      else { targets = all.filter(({ b }) => !b.sentAt); mode = "all"; } // 선택이 없으면 미발송 전체 일괄
+      if (!targets.length) { R.showAlert(screenEl(), { message: "발송할 청구서가 없습니다." }); return; } // 디자인 없음 — 최소 안내
+      store.set("payMode", mode);
+      store.set("payTargets", JSON.stringify(targets.map(({ b }) => b.id)));
+      go("./payment-confirm.html");
+    }
+    /* ---------- 생성취소 (컨펌창 360:162071 → 완료 알럿 360:162162) ---------- */
+    function cancelBills() {
+      if (!st.selected.size) { R.showAlert(screenEl(), { message: "취소할 청구서를 선택하세요." }); return; } // 디자인 없음 — 최소 안내
+      R.showAlert(screenEl(), {
+        message: "선택하신 미납 청구서를\n생성 취소합니다.\n취소 후 다시 생성하실 수 있습니다.", cancelLabel: "아니오", confirmLabel: "예",
+        onConfirm: () => {
+          I.cancel([...st.selected]);
+          st.selected.clear();
+          renderList();
+          R.showAlert(screenEl(), { message: "선택하신 청구서가 생성 취소되었습니다." });
+        },
+      });
+    }
+    reqBtn = R.Button({ label: "납부요청", size: 56, onClick: request });
+    const bar = $("div", "bar", [
+      R.Button({ label: "생성취소", size: 56, variant: "line", color: "red", onClick: cancelBills }),
+      reqBtn,
+    ]);
+    renderCount();
+
+    /* ---------- 납부요청 결과 시트 (360:159298 · 360:159434) ---------- */
+    function openResult() {
+      let r; try { r = JSON.parse(store.get("payResult") || "null"); } catch { r = null; }
+      if (!r) return;
+      store.set("payResult", "");
+      const mask = (n) => (n.length > 20 ? n.slice(0, 20) + "…" : n);
+      let tab = r.okClasses.length || !r.failClasses.length ? 0 : 1;
+      const x = $("button", "res__close", [R.Icon("line/ic24_close-type01", { size: 20, color: "var(--rz-gray-06)" })], { type: "button", "aria-label": "닫기" });
+      const bodyEl = $("div", "res__body");
+      const tabsEl = R.Tabs({ type: "tap01", items: [`성공(${r.okClasses.length})`, `실패(${r.failClasses.length})`], selected: tab, onChange: (i) => { tab = i; paint(); } });
+      function paint() {
+        const ok = tab === 0, list = ok ? r.okClasses : r.failClasses;
+        bodyEl.replaceChildren(
+          $("img", "", [], { src: ok ? "../assets/onboarding/done-hands.svg" : "../assets/onboarding/invoice-fail.svg", alt: "" }),
+          $("h2", "", [ok ? "청구서 납부요청이\n완료 되었습니다." : "청구서 납부요청이\n실패 하였습니다."]),
+          $("p", "", [ok ? "청구서 납부요청이 완료되었습니다.\n하단에 생성이 완료된 클래스를 확인해주세요." : "요청하신 청구서 생성 작업이 실패하였습니다.\n하단에서 해당 클래스 확인 후 다시 시도해 주세요."]),
+          $("div", "res__chips", list.map((n) => $("span", "res__chip", [mask(n)]))),
+        );
+      }
+      const sheet = $("div", "res", [$("div", "res__head", ["청구서 납부요청 결과", x]), tabsEl, bodyEl], { role: "dialog", "aria-modal": "true", "aria-label": "청구서 납부요청 결과" });
+      const dim = $("div", "guide-dim", [sheet]);
+      const close = () => dim.remove();
+      x.addEventListener("click", close);
+      dim.addEventListener("click", (e) => e.target === dim && close());
+      paint();
+      screenEl().append(dim);
+    }
+
+    const scroll = $("div", "scroll", [band, meta, body]);
+    const screen = $("div", "screen", [R.StatusBar(), header, tabs, scroll, countEl, bar]);
+    document.getElementById("root").append(R.Device({ children: [screen] }));
+    function render() { renderBand(); renderList(); }
+    render();
+    if (new URLSearchParams(location.search).get("result")) openResult();
+  </script>
+</body>
+</html>

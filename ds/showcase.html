@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz DS Showcase</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="./tokens.css" />
+  <link rel="stylesheet" href="./components.css" />
+  <style>
+    body { margin: 0; background: #E9ECF2; color: var(--rz-black); font-family: var(--rz-font-sans); }
+    .sc-top { position: sticky; top: 0; z-index: 20; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; padding: 12px 24px; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--rz-gray-03); }
+    .sc-top h1 { margin: 0; font: var(--rz-type-body01-bold); }
+    .sc-top nav { display: flex; gap: 12px; flex-wrap: wrap; }
+    .sc-top a { font: var(--rz-type-small01-medium); color: var(--rz-gray-06); text-decoration: none; }
+    .sc-top a:hover { color: var(--rz-primary); }
+    #sc-count { margin-left: auto; font: var(--rz-type-small01-bold); color: var(--rz-primary); }
+    #sc-root { padding: 24px; max-width: 1600px; margin: 0 auto; }
+    .sc-section { margin-bottom: 48px; }
+    .sc-section h2 { font: var(--rz-type-headline-bold); margin: 0 0 16px; }
+    .sc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 16px; }
+    .sc-card { background: #fff; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+    .sc-card.is-missing { outline: 2px dashed var(--rz-red); }
+    .sc-card > header { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .sc-card > header strong { font: var(--rz-type-small01-bold); word-break: break-all; flex: 1; min-width: 200px; }
+    .sc-card > header code { font: 400 11px/1 ui-monospace, monospace; color: var(--rz-gray-05); }
+    .sc-card > header input { width: 80px; }
+    .sc-compare { display: grid; grid-template-columns: 1fr; gap: 8px; }
+    .sc-pane { position: relative; background: var(--rz-gray-01); border-radius: 8px; padding: 22px 12px 12px; overflow: auto; min-height: 40px; }
+    .sc-tag { position: absolute; top: 4px; left: 8px; font: 600 10px/1 ui-monospace, monospace; color: var(--rz-gray-05); }
+    .sc-pane img { display: block; max-width: none; }
+    .sc-card.is-overlay .sc-compare { grid-template-columns: 1fr; }
+    .sc-card.is-overlay .sc-pane:first-child { position: absolute; pointer-events: none; z-index: 2; background: transparent; }
+    .sc-card.is-overlay .sc-compare { position: relative; }
+    .sc-card.is-overlay .sc-pane:first-child { inset: 0 auto auto 0; }
+    .sc-card.is-overlay .sc-pane:first-child .sc-tag { display: none; }
+    .sc-snippet { margin: 0; padding: 8px 10px; background: #1F2025; color: #CDF0D8; border-radius: 8px; font: 400 11px/1.5 ui-monospace, monospace; white-space: pre-wrap; word-break: break-all; }
+    .sc-err { color: var(--rz-red); }
+    .sc-swatches { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
+    .sc-swatch-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+    .sc-swatch-row h3 { width: 100%; margin: 0; font: var(--rz-type-small01-bold); color: var(--rz-gray-06); }
+    .sc-swatch { width: 128px; background: #fff; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 2px; font: 400 11px/1.4 ui-monospace, monospace; }
+    .sc-swatch i { height: 48px; border-radius: 6px; border: 1px solid rgba(0,0,0,.06); }
+    .sc-swatch span { color: var(--rz-gray-05); }
+    .sc-signature { width: 375px; height: 48px; border-radius: 6px; background: var(--rz-signature); }
+    .sc-type { background: #fff; border-radius: 12px; padding: 8px 16px; }
+    .sc-type-row { display: grid; grid-template-columns: 200px 1fr 200px; gap: 16px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--rz-gray-02); }
+    .sc-type-row code, .sc-type-row small { font: 400 11px/1.4 ui-monospace, monospace; color: var(--rz-gray-05); }
+    .sc-icon-tools { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+    .sc-icon-filter { width: 280px; height: 36px; border-radius: 8px; border: 1px solid var(--rz-gray-03); padding: 0 12px; font: var(--rz-type-body02-medium); }
+    .sc-icon-color { height: 36px; border-radius: 8px; border: 1px solid var(--rz-gray-03); }
+    .sc-icon-tools small { color: var(--rz-gray-05); }
+    .sc-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
+    .sc-icon { background: #fff; border: 0; border-radius: 8px; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; color: inherit; }
+    .sc-icon:hover { outline: 2px solid var(--rz-green-02); }
+    .sc-icon-box { height: 48px; display: grid; place-items: center; }
+    .sc-icon span { font: 400 10px/1.3 ui-monospace, monospace; color: var(--rz-gray-06); word-break: break-all; text-align: center; }
+    @media (max-width: 520px) { .sc-grid { grid-template-columns: 1fr; } #sc-root { padding: 16px; } .sc-type-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body class="rz">
+  <div class="sc-top">
+    <h1>Rallyz DS</h1>
+    <nav>
+      <a href="#c-foundation">Foundation</a><a href="#c-icons">Icons</a><a href="#c-button">Button</a><a href="#c-chip">Chip</a>
+      <a href="#c-input">Input</a><a href="#c-date">Date</a><a href="#c-control">Control</a><a href="#c-header">Header</a>
+      <a href="#c-navagation">Nav · Tabs</a><a href="#c-toast">Feedback</a><a href="#c-list">List</a><a href="#c-chrome">Chrome</a>
+      <a href="../index.html">← 프로토타입</a>
+    </nav>
+    <span id="sc-count"></span>
+  </div>
+  <main id="sc-root"></main>
+  <script src="./rallyz.browser.js"></script>
+  <script src="./registry.js"></script>
+  <script src="./showcase.js"></script>
+</body>
+</html>

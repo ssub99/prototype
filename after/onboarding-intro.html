@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz — 온보딩 인트로</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <style>
+    /* Figma: [온보딩 플로우 개선][2.0.1.0.0.0.0]학원 만들기 프리뷰 (286:34901) · 375×2177 */
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 40px 16px;
+      font-family: var(--rz-font-sans); color: var(--rz-black);
+      background: linear-gradient(165deg, var(--rz-gray-01), var(--rz-gray-02));
+    }
+    .screen { display: flex; flex-direction: column; height: 100%; }
+    .scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+    .scroll::-webkit-scrollbar { display: none; }
+
+    .intro { text-align: center; padding: 32px 16px 0; }
+    .intro h1, .sec-title { margin: 0; font: var(--rz-type-headline-bold); white-space: pre-line; }
+    .intro p { margin: 8px 0 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); white-space: pre-line; }
+    .hero { display: block; width: 375px; height: 242px; margin-top: 32px; }
+
+    .sec-title { text-align: center; margin-top: 32px; }
+
+    .features { display: grid; grid-template-columns: 167px 168px; gap: 8px; padding: 0 16px; margin-top: 32px; }
+    .feature {
+      height: 178px; border-radius: 12px; background: var(--rz-white);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      display: flex; flex-direction: column; align-items: center; padding-top: 32px; text-align: center;
+    }
+    .feature img { width: 48px; height: 48px; }
+    .feature strong { margin-top: 8px; font: var(--rz-type-body02-bold); }
+    .feature span { margin-top: 8px; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); white-space: pre-line; }
+
+    .steps { display: flex; flex-direction: column; gap: 16px; padding: 0 12px 0 20px; margin-top: 32px; } /* Figma places step cards at x=20 (343 wide) */
+    .step { display: flex; gap: 16px; align-items: flex-start; height: 136px; padding: 28px 16px; border-radius: 16px; background: var(--rz-gray-01); }
+    .step__badge { width: 80px; height: 80px; border-radius: 50%; background: var(--rz-white); flex: none; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+    .step__badge img { width: 32px; height: 60px; }
+    .step__text { padding-top: 3px; }
+    .step__text strong { display: block; font: var(--rz-type-body01-bold); }
+    .step__text p { margin: 8px 0 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); white-space: pre-line; }
+
+    .cta { margin-top: 40px; background: var(--rz-green-g); height: 284px; padding-top: 40px; display: flex; justify-content: center; overflow: hidden; }
+    .cta img { width: 240px; height: 244px; display: block; }
+
+    .bottom-bar { flex: none; height: 88px; padding: 16px; background: var(--rz-white); }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script>
+    const { Device, StatusBar, FlowHeader, Button } = window.Rallyz;
+    const html = (s) => { const t = document.createElement("template"); t.innerHTML = s.trim(); return t.content; };
+
+    const features = [
+      ["feature-notice", "실시간 학원 소식 알림", "출결현황/성적/청구서 등\n학원 소식을 실시간 알림"],
+      ["feature-chat", "클래스별 소통", "클래스별 공지/과제･진도 공유\n/클래스 전용채팅(1:1, 그룹)"],
+      ["feature-report", "개인별 학습현황 관리", "출결/성적표 작성/\n학습 피드백/성적표 자동 발송"],
+      ["feature-bill", "청구서 발행 및 간편결제", "청구서 발행/\n간편 결제/미납 회원 관리"],
+      ["feature-search", "학원 추천/검색 및 상담", "사용자 근방 학원추천/\n입학 상담 및 관련문의"],
+      ["feature-live", "LIVE 화상강의", "판서 및 화면 공유/실시간\n화상강의/강의 녹화 및 공유"],
+    ];
+    const steps = [
+      ["step-01", "학원이 필요해요", "학원은 클래스로 구성된 공간이며,\n학생과 보호자와 소통할 수 있어요."],
+      ["step-02", "클래스가 필요해요", "학생으로 구성되는 공간이며,\n밀접하게 관리할 수 있어요."],
+      ["step-03", "학생등록이 필요해요", "출결, 성적, 결제들을 사용하려면\n학생등록이 필요해요."],
+    ];
+
+    const scroll = document.createElement("div");
+    scroll.className = "scroll";
+    scroll.append(html(`
+      <section class="intro">
+        <h1>학원관리,\n불편하셨던적 있으시죠?</h1>
+        <p>그런 경험이 있으시다면 랠리즈로\n편리하게 확! 바꿔보세요</p>
+      </section>
+      <img class="hero" src="../assets/onboarding/hero.svg" alt="랠리즈로 학원을 관리하는 선생님들" />
+
+      <h2 class="sec-title">학원도 앱으로 관리되는\n차별화된 서비스를 시작해보세요!</h2>
+      <div class="features">
+        ${features.map(([img, t, d]) => `
+          <article class="feature">
+            <img src="../assets/onboarding/${img}.svg" alt="" />
+            <strong>${t}</strong>
+            <span>${d}</span>
+          </article>`).join("")}
+      </div>
+
+      <h2 class="sec-title" style="margin-top:48px">랠리즈로 관리를 시작하려면\n3가지가 필요해요</h2>
+      <ol class="steps" style="list-style:none;margin-bottom:0">
+        ${steps.map(([img, t, d], i) => `
+          <li class="step">
+            <span class="step__badge"><img src="../assets/onboarding/${img}.svg" alt="${i + 1}단계" /></span>
+            <div class="step__text"><strong>${t}</strong><p>${d}</p></div>
+          </li>`).join("")}
+      </ol>
+
+      <section class="cta" aria-label="무료로 간편한 학원관리를 시작해보시겠어요?">
+        <img src="../assets/onboarding/cta-teacher.svg" alt="무료로 간편한 학원관리를 시작해보시겠어요?" />
+      </section>
+    `));
+
+    const bottom = document.createElement("div");
+    bottom.className = "bottom-bar";
+    bottom.append(Button({
+      label: "무료로 시작하기", size: 56,
+      onClick: () => (location.href = "./onboarding-academy.html"),
+    }));
+
+    const screen = document.createElement("div");
+    screen.className = "screen";
+    screen.append(
+      StatusBar(),
+      FlowHeader({ lead: "prev", onLead: () => (history.length > 1 ? history.back() : (location.href = "./index.html")) }),
+      scroll,
+      bottom,
+    );
+
+    document.getElementById("root").append(Device({ children: [screen] }));
+  </script>
+</body>
+</html>

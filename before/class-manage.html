@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — 클래스 관리</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [6.2.3.1.1.0.0]학원관리_클래스관리 ×5 (320:132575 목록 · 132732 더보기 메뉴 · 132622 복사 확인 · 132675 복사 후 · 133189 클래스 없음)
+    Opened from 학원관리 › 클래스. Shared by before/ and after/ — keep both copies identical.
+  -->
+  <style>
+    .search-band { flex: none; padding: 12px 16px; background: var(--rz-gray-01); }
+    .list { padding: 0 16px; }
+    .row { cursor: pointer; position: relative; display: flex; gap: 12px; padding: 16px 0 16px; border-bottom: 1px solid var(--rz-gray-02); }
+    .row__thumb { width: 96px; height: 58px; border-radius: 8px; overflow: hidden; flex: none; box-shadow: 0 0 0 1px var(--rz-gray-02); background: var(--rz-gray-01); }
+    .row__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .row__body { flex: 1; min-width: 0; }
+    .row__title { margin: 0; font: var(--rz-type-body02-bold); color: var(--rz-black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row__info { margin: 4px 0 0; padding: 0; list-style: none; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+    .row__info b { font-weight: 400; color: var(--rz-black); }
+    .row__more { align-self: center; border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; margin-top: -6px; }
+    .menu { position: absolute; right: 24px; top: 44px; z-index: 30; width: 136px; padding: 16px 0 0; border-radius: 8px; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-03); display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px; }
+    .menu button { height: 21px; border: 0; background: none; padding: 0; cursor: pointer; font: var(--rz-type-body02-regular); color: var(--rz-black); }
+    .empty { margin: 24px 0; padding: 48px 16px; text-align: center; font: var(--rz-type-body02-regular); color: var(--rz-gray-05); }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script src="../common/none-page.js?v=3"></script>
+  <script>
+    const R = Rallyz;
+    const { $, alert, go } = Onb;
+    if (!RzData.get().academy) location.replace("./index.html");
+    const academy = RzData.get().academy?.name || "";
+    let query = "";
+    let openMenu = null;
+    const closeMenu = () => { openMenu?.remove(); openMenu = null; };
+    document.addEventListener("click", (e) => { if (openMenu && !e.target.closest(".menu, .row__more")) closeMenu(); });
+
+    // 삭제 (no Figma yet → same confirm pattern as 복사): the class is removed, its students stay but become 클래스 미배정
+    function deleteClass(index) {
+      alert(list, {
+        message: "클래스를 삭제 하시겠습니까?\n※ 삭제한 클래스는 복구할 수 없습니다.\n※ 클래스에 연결된 학생은 삭제되지 않습니다.",
+        cancelLabel: "아니오", confirmLabel: "예",
+        onConfirm: () => {
+          RzData.update((d) => { const [c] = d.classes.splice(index, 1); d.students.forEach((st) => { if (st.klass === c.name) st.klass = ""; }); });
+          render();
+        },
+      });
+    }
+
+    function copyClass(index) {
+      alert(list, {
+        message: "클래스를 복사 하시겠습니까?\n※ 복사후 클래스명을 변경해 주세요.\n※ 클래스에 연결된 학생은 이동되지 않습니다.",
+        cancelLabel: "아니오", confirmLabel: "예",
+        onConfirm: () => {
+          RzData.update((d) => { const c = d.classes[index]; d.classes.splice(index + 1, 0, { ...structuredClone(c), name: `${c.name} 사본` }); });
+          render();
+        },
+      });
+    }
+
+    const list = $("div", "list");
+    function render() {
+      closeMenu();
+      const d = RzData.get();
+      const count = (name) => d.students.filter((s) => s.klass === name).length;
+      const rows = d.classes.map((c, i) => [c, i]).filter(([c]) => !query || c.name.includes(query));
+      const gated = NonePage.gate({ needs: ["class"], from: "class-manage" }); // 클래스 논페이지 (docs/none-page-policy.md)
+      search.hidden = !!gated; // 클래스 논페이지에서는 검색 영역을 보여 주지 않는다
+      if (gated) { list.replaceChildren(gated); return; }
+      if (!rows.length) { list.replaceChildren($("p", "empty", ["검색 결과가 없습니다."])); return; }
+      list.replaceChildren(...rows.map(([c, i]) => {
+        const more = $("button", "row__more", [R.Icon("line/ic24_more", { size: 24, color: "var(--rz-gray-04)" })], { type: "button", "aria-label": `${c.name} 더보기` });
+        const row = $("article", "row", [
+          $("span", "row__thumb", [$("img", "", [], { src: c.thumb || "../assets/thumbs/class_1.jpg", alt: "" })]),
+          $("div", "row__body", [
+            $("h2", "row__title", [c.name]),
+            $("ul", "row__info", [
+              $("li", "", ["담당 강사 : ", $("b", "", [c.teacher || "미배정"])]),
+              $("li", "", ["강사 연락처 : ", $("b", "", [c.teacherPhone || "-"])]),
+              $("li", "", ["인원 : ", $("b", "", [`${count(c.name)}명`])]),
+            ]),
+          ]),
+          more,
+        ]);
+        row.addEventListener("click", (e) => { if (!e.target.closest(".row__more, .menu")) go(`./class-edit.html?i=${i}`); });
+        more.addEventListener("click", () => {
+          const wasOpen = openMenu && openMenu.parentNode === row;
+          closeMenu();
+          if (wasOpen) return;
+          // 학생관리 → 학생 명단 (학생 없음) / 학생 관리 filtered to this class
+          const item = (label, fn) => { const b = $("button", "", [label], { type: "button" }); b.addEventListener("click", () => { closeMenu(); fn?.(); }); return b; };
+          openMenu = $("div", "menu", [item("수정", () => go(`./class-edit.html?i=${i}`)), item("복사", () => copyClass(i)), item("삭제", () => deleteClass(i)), item("학생관리", () => go(`./${count(c.name) ? "student-manage" : "student-list"}.html?class=${encodeURIComponent(c.name)}`))]);
+          row.append(openMenu);
+        });
+        return row;
+      }));
+    }
+
+    const search = $("div", "search-band", [R.Search({ placeholder: "검색", onInput: (v) => { query = v.trim(); render(); } })]);
+    const scroll = $("div", "scroll", [list]);
+    const screen = $("div", "screen", [
+      R.StatusBar(),
+      R.FlowHeader({ title: "클래스", subtitle: academy, lead: "close", buttonLabel: "생성",
+        onLead: () => go("./academy-manage.html"),
+        onTrail: () => go("./class-new.html?from=class-manage") }),
+      search, scroll,
+    ]);
+    document.getElementById("root").append(R.Device({ children: [screen] }));
+    render();
+  </script>
+</body>
+</html>

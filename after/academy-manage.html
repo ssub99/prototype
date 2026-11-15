@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz — 학원관리</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [6.2.0.0.0.0.0]MY 학원_학원관리 (296:130693) — opened from 학원관리 on the 홈 학원 card / MY 학원.
+    Shared by before/ and after/ — keep both copies identical.
+  -->
+  <style>
+    .menus { background: var(--rz-gray-01); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .menu { border-radius: 16px; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-02); }
+    .menu__head { display: flex; align-items: center; justify-content: space-between; height: 54px; padding: 0 16px; border-bottom: 1px solid var(--rz-gray-02); font: var(--rz-type-body02-bold); }
+    .menu__grid { display: grid; grid-template-columns: 1fr 1fr; padding: 0 1px; }
+    .menu__item { position: relative; display: flex; align-items: center; height: 56px; padding: 0 16px; border: 0; background: none; text-align: left; cursor: pointer; font: var(--rz-type-small01-medium); color: var(--rz-gray-06); }
+    .menu__item .rz-icon:first-child { margin-right: 4px; color: var(--rz-gray-07); }
+    .menu__item .arrow { margin-left: auto; color: var(--rz-gray-04); }
+    .tip { position: absolute; z-index: 5; display: flex; flex-direction: column; align-items: flex-start; }
+    .tip__box { display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 8px; background: var(--rz-primary); color: var(--rz-white); font: var(--rz-type-small01-regular); white-space: nowrap; }
+    .tip__txt { line-height: 20px; }
+    .tip__x { flex: none; width: 20px; height: 20px; border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
+    .tip__arrow { width: 12px; height: 8px; margin-top: -1px; margin-left: 28px; background: var(--rz-primary); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+    .menu__item[data-dot]::after { content: ""; position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--rz-red); }
+    .cs { display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; background: var(--rz-gray-06); font: var(--rz-type-body01-bold); color: var(--rz-white); }
+    .cs b { color: var(--rz-primary); }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script>
+    const R = Rallyz;
+    const { $, go } = Onb;
+    const data = RzData.get();
+    // 어디서 들어왔는지(?from=academy-main | home)를 기억해 둔다 — 관리 화면들을 거쳐 다시 돌아와도 닫기가 처음 진입한 곳으로 가도록.
+    const fromQ = new URLSearchParams(location.search).get("from");
+    if (fromQ) Onb.store.set("manageFrom", fromQ);
+    const origin = Onb.store.get("manageFrom", "");
+    if (!data.academy) location.replace("./index.html");
+
+    /* menu groups — only 클래스 · 학생/보호자 관리 · 학생 등록 · 학원 출석 관리 have built screens; the rest have no action */
+    const G = "glyph/ux-";
+    const MENUS = [
+      ["학원 관리", false, [["학원정보", G + "24_information"], ["직원/강사", G + "24_employee"], ["클래스", G + "24_class", "./class-manage.html"], ["권한", G + "24_authority"], ["학원공지", G + "24_notice"]]],
+      ["청구/납부", false, [["청구서 생성", G + "24_bill", "./invoice-create.html"], ["납부 관리", G + "24_payment", "./payment-manage.html"], ["회차 관리", G + "24_count"], ["입출금 내역", G + "24_deposit"], ["클래스 수강료", G + "24_fee"]]],
+      ["학생 관리", false, [["학생/보호자 관리", G + "24_member", "./student-manage.html"], ["학생 등록", G + "24_student-add", "./student-add.html?from=academy-manage"]]],
+      ["학원 홍보/문의", false, [["학원 문의", G + "ic24_inquiry"]]],
+      ["수업 지원", false, [["라이브 클래스", G + "24_liveclass"], ["학원 출석 관리", G + "ic24_class-present", "./attendance.html"], ["데스크 출석", G + "24_deskattend"], ["채팅방 에티켓", G + "notification-slash"], ["학습 관리", G + "learning-manage"]]],
+    ];
+    const menus = $("div", "menus", MENUS.map(([title, fav, items]) => $("section", "menu", [
+      $("div", "menu__head", [title, R.CheckIcon({ type: "star", checked: fav, label: `${title} 즐겨찾기` })]),
+      $("div", "menu__grid", items.map(([label, icon, href]) => {
+        const b = $("button", "menu__item", [R.Icon(icon, { size: 24 }), label, R.Icon("line/ic24_arrow-right", { size: 24, color: "var(--rz-gray-04)", className: "arrow" })], { type: "button" });
+        if (href) b.addEventListener("click", () => go(href));
+        return b;
+      })),
+    ])));
+    /* 개선 후: 학원관리 첫 진입 안내 툴팁 — 해당 항목이 없을 때만, 클래스 → 학생 순서. Figma 397:172515 (tooltip: 초록 #07B53B 알약 r8, 패딩 6/8, 흰 12px 문구 + 닫기 20px, 아래쪽 화살표).
+     *   · 클래스 툴팁: 클래스가 1개도 없을 때(학생 유무 무관) — "클래스" 메뉴 위에
+     *   · 학생 툴팁: 클래스는 있고 학생이 1명도 없을 때 — "학생/보호자 관리" 메뉴 위에 (둘은 동시에 뜨지 않는다) */
+    if (RzData.version === "after") {
+      const tip = !data.classes.length
+        ? { label: "클래스", text: "등록된 클래스가 없습니다. 생성해 주세요." }
+        : !data.students.length
+          ? { label: "학생/보호자 관리", text: "등록된 학생이 없습니다. 1명 이상 등록해 주세요." }
+          : null;
+      if (tip) {
+        const item = [...menus.querySelectorAll(".menu__item")].find((b) => b.textContent.trim() === tip.label);
+        const grid = item && item.parentElement;
+        if (grid) {
+          grid.style.position = "relative";
+          const t = $("div", "tip", []);
+          const close = $("button", "tip__x", [R.Icon("line/ic24_close-type01", { size: 20, color: "var(--rz-white)" })], { type: "button", "aria-label": "닫기" });
+          close.addEventListener("click", (e) => { e.stopPropagation(); t.remove(); });
+          t.append($("div", "tip__box", [$("span", "tip__txt", [tip.text]), close]), $("span", "tip__arrow", []));
+          grid.append(t);
+          const place = () => { // 화면이 문서에 붙은 뒤에 잰다(그 전에는 offset 이 0)
+            if (!item.offsetHeight) return requestAnimationFrame(place);
+            t.style.left = item.offsetLeft + 38 + "px"; // Figma: 메뉴 아이템 왼쪽에서 38px, 화살표 끝이 아이템 위쪽 16px 안쪽
+            t.style.top = item.offsetTop - 24 + "px";
+          };
+          place();
+        }
+      }
+    }
+    // 학원 문의 red dot: shown only with unread inquiries — none exist after onboarding
+
+    const tabs = R.Tabs({ items: ["학원 관리", "학원 현황"], selected: 0 });
+    // 학원 현황 tab isn't designed → keep 학원 관리 selected
+    tabs.addEventListener("click", (e) => { if (e.target.closest("button") === tabs.children[1]) e.stopPropagation(); }, true);
+
+    const scroll = $("div", "scroll", [menus, $("div", "cs", [$("b", "", ["고객센터"]), "1577 - 0682"])]);
+    const screen = $("div", "screen", [
+      R.StatusBar(),
+      R.FlowHeader({ title: data.academy?.name || "", lead: "close",
+        // 닫기: 학원 메인(academy-main)에서 들어왔으면 학원 메인으로(클래스·학생 관리 등을 거쳐 와도 유지), 홈에서 들어왔으면 홈으로. 그 밖에는 개선 전은 홈(push), 개선 후는 이전 화면.
+        onLead: () => {
+          const o = origin; Onb.store.set("manageFrom", "");
+          if (o === "academy-main") return go("./academy-main.html");
+          if (o === "home" || RzData.version === "before" || history.length <= 1) return go("./home.html");
+          history.back();
+        } }),
+      tabs, scroll,
+    ]);
+    document.getElementById("root").append(R.Device({ children: [screen] }));
+  </script>
+</body>
+</html>

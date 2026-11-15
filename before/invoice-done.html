@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — 청구서 생성 완료</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [6.2.2.1.2.2.1]생성 완료 (360:158430). 청구서 목록으로 → 청구서 생성(invoice-create), 납부관리 바로가기 → 납부 관리(payment-manage).
+    Shared by before/ and after/ — keep both copies identical (title only differs).
+  -->
+  <style>
+    .done { flex: 1; text-align: center; padding: 96px 16px 0; }
+    .done img { width: 120px; height: 120px; display: block; margin: 0 auto; }
+    .done h1 { margin: 32px 0 0; font: var(--rz-type-headline-bold); color: var(--rz-black); white-space: pre-line; }
+    .note { margin: 32px 24px 0; border-radius: 12px; background: #FFF2F2; padding: 16px; font: var(--rz-type-small01-regular); color: var(--rz-red); white-space: pre-line; line-height: 21px; }
+    .acts { margin-top: 32px; }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script>
+    const R = Rallyz;
+    const { $, go } = Onb;
+    if (!RzData.get().academy) location.replace("./index.html");
+    const acts = $("div", "acts", [R.ButtonGroup({ primary: "납부관리 바로가기", secondary: "청구서 목록으로", secondaryColor: "grey", onPrimary: () => go("./payment-manage.html"), onSecondary: () => go("./invoice-create.html?keep=1") })]);
+    const body = $("div", "done", [
+      $("img", "", [], { src: "../assets/onboarding/done-hands.svg", alt: "" }),
+      $("h1", "", ["청구서가 생성되었습니다!\n납부 요청하셔야\n간편 결제 청구서가 발송됩니다."]),
+      $("p", "note", ["간편 결제로 납부 받기 원하시거나\n납부 요청 알림을 보내시려면\n납부 관리에서 납부요청을 발송해 주세요."]),
+      acts,
+    ]);
+    document.getElementById("root").append(R.Device({ children: [$("div", "screen", [R.StatusBar(), body])] }));
+  </script>
+</body>
+</html>

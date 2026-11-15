@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz 온보딩 프로토타입</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="./ds/tokens.css" />
+  <style>
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px 16px;
+      font-family: var(--rz-font-sans); color: var(--rz-black);
+      background: linear-gradient(165deg, var(--rz-gray-01), var(--rz-gray-02));
+    }
+    main { width: 100%; max-width: 720px; }
+    header { text-align: center; margin-bottom: 32px; }
+    .logo { display: inline-flex; width: 96px; height: 29px; color: var(--rz-primary); }
+    .logo svg { width: 100%; height: 100%; }
+    h1 { margin: 16px 0 0; font: var(--rz-type-headline-bold); }
+    header p { margin: 8px 0 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); }
+
+    .versions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .version {
+      display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 16px; background: var(--rz-white);
+      text-decoration: none; color: inherit; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), inset 0 0 0 1px var(--rz-gray-02);
+      transition: box-shadow .15s, transform .15s;
+    }
+    .version:hover { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), inset 0 0 0 1px var(--rz-primary); transform: translateY(-2px); }
+    .version:focus-visible { outline: 3px solid var(--rz-green-02); outline-offset: 2px; }
+    .tag { align-self: flex-start; padding: 3px 10px; border-radius: 12px; font: var(--rz-type-small01-bold); }
+    .version--before .tag { background: var(--rz-gray-02); color: var(--rz-gray-06); }
+    .version--after .tag { background: var(--rz-green-g); color: var(--rz-primary); }
+    .version h2 { margin: 0; font: var(--rz-type-body01-bold); }
+    .version ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); counter-reset: s; }
+    .version li { display: flex; gap: 8px; }
+    .version li::before { counter-increment: s; content: counter(s); flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--rz-gray-01); color: var(--rz-gray-05); font: var(--rz-type-small01-bold); font-size: 10px; }
+    .version li.diff { color: var(--rz-black); }
+    .version--after li.diff::before { background: var(--rz-green-01); color: var(--rz-primary); }
+    .version--before li.diff::before { background: var(--rz-gray-03); color: var(--rz-gray-07); }
+    .cta { margin-top: auto; padding-top: 8px; display: flex; align-items: center; justify-content: center; height: 48px; border-radius: 8px; font: var(--rz-type-body02-bold); }
+    .version--before .cta { box-shadow: inset 0 0 0 1px var(--rz-gray-03); color: var(--rz-gray-06); padding-top: 0; }
+    .version--after .cta { background: var(--rz-primary); color: var(--rz-white); padding-top: 0; }
+
+    footer { margin-top: 24px; text-align: center; font: var(--rz-type-small01-regular); color: var(--rz-gray-05); }
+    footer a { color: var(--rz-gray-06); }
+
+    /* 컨벤션: 지문별 소요 시간 표 (프로토타입 지문 영역의 스톱워치에서 정지로 저장된 시간) */
+    .conv { margin-top: 32px; }
+    .conv__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+    .conv__head h2 { margin: 0; font: var(--rz-type-body01-bold); }
+    .conv__head p { margin: 4px 0 0; font: var(--rz-type-small01-regular); color: var(--rz-gray-05); }
+    .conv__btns { display: flex; gap: 8px; }
+    .conv__btn { height: 36px; padding: 0 14px; border: 0; border-radius: 8px; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-03); font: var(--rz-type-small01-medium); color: var(--rz-gray-07); cursor: pointer; }
+    .conv__btn--danger { color: #FF3434; box-shadow: inset 0 0 0 1px #FF3434; }
+    .conv__card { border-radius: 16px; background: var(--rz-white); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), inset 0 0 0 1px var(--rz-gray-02); overflow: hidden; }
+    .conv__scroll { overflow-x: hidden; } /* 표는 영역 폭에 맞춰 줄바꿈하며 줄어든다(가로 스크롤 없음) */
+    .conv table { width: 100%; table-layout: fixed; border-collapse: collapse; font: var(--rz-type-body02-regular); white-space: normal; word-break: keep-all; }
+    .conv th:first-child, .conv td:first-child { width: 52px; }
+    .conv th:nth-child(2), .conv td:nth-child(2) { width: 76px; }
+    .conv th:nth-last-child(2), .conv td:nth-last-child(2) { width: 68px; }
+    .conv th:last-child, .conv td:last-child { width: 104px; }
+    .conv th, .conv td { padding: 12px 6px; text-align: center; border-bottom: 1px solid var(--rz-gray-02); }
+    .conv th { background: var(--rz-gray-01); font: var(--rz-type-body02-bold); color: var(--rz-gray-07); }
+    .conv th small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-top: 2px; overflow: hidden; font: var(--rz-type-small01-regular); color: var(--rz-gray-05); }
+    .conv td.num { font-variant-numeric: tabular-nums; font-weight: 700; }
+    .conv td.none { color: var(--rz-gray-04); font-weight: 400; }
+    .conv td.sum { color: var(--rz-primary); }
+    .conv tbody tr:last-child td { border-bottom: 0; }
+    .conv tfoot td { background: var(--rz-gray-01); font-weight: 700; border-bottom: 0; }
+    .conv .vtag { display: inline-block; padding: 2px 10px; border-radius: 12px; font: var(--rz-type-small01-bold); background: var(--rz-gray-02); color: var(--rz-gray-06); }
+    .conv .vtag--after { background: var(--rz-green-01); color: var(--rz-primary); }
+    .conv__legend { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .conv__legend section { border-radius: 12px; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-02); padding: 12px 14px; }
+    .conv__legend h3 { margin: 0 0 6px; font: var(--rz-type-small01-bold); color: var(--rz-gray-07); }
+    .conv__legend ol { margin: 0; padding-left: 18px; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); line-height: 18px; }
+    .conv__legend li + li { margin-top: 4px; }
+    .scn { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .scn__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .scn__chip { height: 32px; padding: 0 14px; border: 0; border-radius: 16px; cursor: pointer; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-03); font: var(--rz-type-small01-medium); color: var(--rz-gray-06); }
+    .scn__chip.is-on { background: var(--rz-primary); box-shadow: none; color: var(--rz-white); font-weight: 700; }
+    .conv__empty { margin: 0; padding: 48px 16px; text-align: center; font: var(--rz-type-body02-regular); color: var(--rz-gray-05); }
+
+    @media (max-width: 560px) { .versions { grid-template-columns: 1fr; } .conv__legend { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <span class="logo" id="logo" aria-label="랠리즈"></span>
+      <h1>학원장 온보딩 프로토타입</h1>
+      <p>확인할 버전을 선택하세요. 진하게 표시된 단계가 두 버전에서 달라요.</p>
+    </header>
+
+    <nav class="versions" aria-label="프로토타입 버전">
+      <a class="version version--before" href="./before/index.html">
+        <span class="tag">개선 전</span>
+        <h2>기존 온보딩 플로우</h2>
+        <ol>
+          <li>홈 → 온보딩 인트로</li>
+          <li>학원 생성 1/3</li>
+          <li class="diff">클래스 등록 유도</li>
+          <li class="diff">클래스 만들기 · 완료 팝업</li>
+          <li class="diff">학생 등록 유도</li>
+          <li class="diff">학생 등록 · 완료 팝업</li>
+        </ol>
+        <span class="cta">개선 전 보기</span>
+      </a>
+      <a class="version version--after" href="./after/index.html">
+        <span class="tag">개선 후</span>
+        <h2>개선된 온보딩 플로우</h2>
+        <ol>
+          <li>홈 → 온보딩 인트로</li>
+          <li>학원 생성 1/3</li>
+          <li class="diff">학원 생성 완료 안내</li>
+          <li class="diff">클래스 만들기 2/3 → 클래스 생성 완료</li>
+          <li class="diff">학생 등록 3/3</li>
+          <li class="diff">학생 등록 완료</li>
+        </ol>
+        <span class="cta">개선 후 보기</span>
+      </a>
+    </nav>
+
+    <section class="conv" aria-label="지문별 소요 시간">
+      <div class="conv__head">
+        <div><h2>컨벤션 · 지문별 소요 시간</h2><p id="convSub">프로토타입에서 정지로 저장된 시간을 보여줍니다.</p></div>
+      </div>
+      <div class="scn" aria-label="시나리오">
+        <div class="scn__chips" id="scn"></div>
+        <div class="conv__btns">
+          <button class="conv__btn" id="convRefresh" type="button">새로고침</button>
+          <button class="conv__btn conv__btn--danger" id="convClear" type="button">기록 모두 지우기</button>
+        </div>
+      </div>
+      <div class="conv__card"><div class="conv__scroll" id="convTable"></div></div>
+      <div class="conv__legend" id="convLegend"></div>
+    </section>
+
+    <footer><a href="./ds/showcase.html">Rallyz DS (Tokens &amp; Components)</a></footer>
+  </main>
+
+  <script src="./ds/rallyz.browser.js"></script>
+  <script src="./common/scenario.js?v=18"></script>
+  <script>
+    // Rallyz logo from the DS icon set (glyph/logo, currentColor)
+    const logo = Rallyz.Icon("glyph/logo", { width: 96, height: 29, color: "var(--rz-primary)" });
+    document.getElementById("logo").replaceWith(logo);
+    logo.classList.add("logo");
+    /* 컨벤션: 지문별 스톱워치에서 정지로 저장된 시간(localStorage "proto.conv", 회차 = "처음으로" 사이의 한 번의 진행)을 표로 조회. 다른 창에서 저장되면 자동 갱신. */
+    (function () {
+      const KEY = "proto.conv";
+      const scOf = () => (scn === "2" ? window.RZ_SCENARIOS_2 : window.RZ_SCENARIOS) || {};
+      const SCENARIOS = [["1", "시나리오1"], ["2", "시나리오2"]]; // 시나리오가 늘면 여기와 지문 세트(scenario.js)만 추가한다
+      let scn = "1";
+      const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{"sessions":[]}').sessions || []; } catch { return []; } };
+      // 프로토타입 창이 주소(#conv=…)로 넘겨준 기록을 합쳐 저장한다(저장소가 창마다 분리돼도 보이도록).
+      try {
+        const m = location.hash.match(/conv=([^&]+)/);
+        if (m) {
+          const incoming = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))));
+          const map = new Map(load().map((x) => [x.id, x]));
+          incoming.forEach((x) => { const o = map.get(x.id); if (!o) map.set(x.id, x); else { o.times = { ...o.times, ...x.times }; o.at = Math.max(o.at || 0, x.at || 0); } });
+          localStorage.setItem(KEY, JSON.stringify({ sessions: [...map.values()] }));
+          history.replaceState(null, "", location.pathname + location.search);
+        }
+      } catch { /* ignore bad hash */ }
+      const fmt = (ms) => { const t = Math.floor(ms / 1000); return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`; };
+      const when = (at) => { const d = new Date(at), p = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+      const el = (tag, cls, kids = []) => { const n = document.createElement(tag); if (cls) n.className = cls; n.append(...[].concat(kids)); return n; };
+      function render() {
+        const rows = load().filter((r) => (r.scenario || "1") === scn).sort((a, b) => Number(a.id) - Number(b.id));
+        const host = document.getElementById("convTable");
+        document.getElementById("convSub").textContent = rows.length ? `총 ${rows.length}회차 기록 · 지문마다 정지한 시간이 저장됩니다.` : "프로토타입에서 정지로 저장된 시간을 보여줍니다.";
+        if (!rows.length) { host.replaceChildren(el("p", "conv__empty", ["저장된 기록이 없습니다. 프로토타입의 지문별 스톱워치에서 정지를 누르면 여기에 저장됩니다."])); return; }
+        const SC = scOf(); const steps = Math.max((SC.before?.steps || []).length, (SC.after?.steps || []).length);
+        const n = Math.max(steps, ...rows.map((r) => Math.max(0, ...Object.keys(r.times).map(Number))));
+        const head = el("tr", "", [el("th", "", ["회차"]), el("th", "", ["버전"]),
+          ...Array.from({ length: n }, (_, i) => el("th", "", [`지문 ${i + 1}`])), el("th", "", ["합계"]), el("th", "", ["저장 시각"])]);
+        const body = rows.map((r, idx) => {
+          const vals = Array.from({ length: n }, (_, i) => r.times[i + 1]);
+          const sum = vals.filter((v) => v != null).reduce((a, b) => a + b, 0);
+          return el("tr", "", [el("td", "", [String(idx + 1)]), el("td", "", [el("span", `vtag${r.version === "after" ? " vtag--after" : ""}`, [r.version === "before" ? "개선 전" : "개선 후"])]),
+            ...vals.map((v) => el("td", v == null ? "num none" : "num", [v == null ? "-" : fmt(v)])), el("td", "num sum", [fmt(sum)]), el("td", "", [when(r.at)])]);
+        });
+        const avg = Array.from({ length: n }, (_, i) => { const v = rows.map((r) => r.times[i + 1]).filter((x) => x != null); return v.length ? fmt(v.reduce((a, b) => a + b, 0) / v.length) : "-"; });
+        const foot = el("tr", "", [el("td", "", ["평균"]), el("td", ""), ...avg.map((a) => el("td", "num", [a])), el("td", ""), el("td", "")]);
+        host.replaceChildren(el("table", "", [el("thead", "", [head]), el("tbody", "", body), el("tfoot", "", [foot])]));
+      }
+      /* 시나리오 칩: 누르면 그 시나리오의 시간 기록만 표로 조회한다(지금은 시나리오1 하나). */
+      function renderScn() {
+        document.getElementById("scn").replaceChildren(...SCENARIOS.map(([k, l]) => {
+          const c = el("button", "scn__chip" + (k === scn ? " is-on" : ""), [l]); c.type = "button";
+          c.addEventListener("click", () => { scn = k; renderScn(); render(); renderLegend(); });
+          return c;
+        }));
+      }
+      renderScn();
+      const legend = document.getElementById("convLegend");
+      function renderLegend() {
+        const SC = scOf();
+        legend.replaceChildren(...[["before", "개선 전 지문"], ["after", "개선 후 지문"]].map(([k, label]) => el("section", "", [el("h3", "", [label]), el("ol", "", ((SC[k] && SC[k].steps) || []).map((t) => el("li", "", [t])))])));
+      }
+      renderLegend();
+      document.getElementById("convRefresh").addEventListener("click", render);
+      document.getElementById("convClear").addEventListener("click", () => { if (confirm("저장된 기록을 모두 지울까요?")) { try { localStorage.removeItem(KEY); } catch { /* private mode */ } render(); } });
+      window.addEventListener("storage", (e) => { if (e.key === KEY) { render(); } });
+      render();
+    })();
+    // forget the old auto-redirect preference
+    try { localStorage.removeItem("rz.version"); } catch { /* private mode */ }
+  </script>
+</body>
+</html>

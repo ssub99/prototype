@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz — 청구금액 조정</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [6.2.2.1.1.1.0]청구 내역(기간 청구서)_원화 디폴트(추가 작업) (351:149392) · …기타경비 추가(값 없음)(추가작업) (351:149457)
+    Opened from 청구서 생성 › 조정 (?sid=<학생 인덱스>). 저장 → 그 학생·청구월의 조정값(RzData.adjusts)으로 저장하고 목록으로 돌아간다.
+    Math: common/invoice.js. Shared by before/ and after/ — keep both copies identical (title only differs).
+  -->
+  <style>
+    .band { flex: none; background: var(--rz-gray-01); padding: 16px; }
+    .who { border-radius: 12px; background: var(--rz-white); }
+    .who__top { position: relative; height: 74px; padding: 16px; box-sizing: border-box; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); }
+    .who__top b { display: block; font: var(--rz-type-body02-bold); }
+    .who__top > .rz-icon { position: absolute; right: 16px; top: 17px; width: 40px; height: 40px; }
+    .who__top > .rz-icon svg { position: static; }
+    .who__foot { height: 43px; border-top: 1px solid var(--rz-gray-02); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font: var(--rz-type-small01-bold); color: var(--rz-gray-06); }
+    .due-btn { border: 0; background: none; padding: 0; margin-left: 4px; cursor: pointer; font: 700 12px/18px var(--rz-font-sans); color: var(--rz-secondary); text-decoration: underline; text-underline-offset: 2px; }
+
+    .sec { padding: 24px 16px 32px; border-top: 8px solid var(--rz-gray-02); }
+    .sec:first-of-type { border-top: 0; }
+    .sec__title { display: flex; align-items: center; justify-content: space-between; min-height: 24px; margin: 0 0 16px; font: var(--rz-type-body01-bold); color: var(--rz-black); }
+    .sec__title small { font: var(--rz-type-body02-regular); }
+    .sec__title .rz-check { font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+    .sec__title .rz-btn { flex: none; }
+    .info { border-radius: 12px; background: var(--rz-gray-01); padding: 16px; display: flex; flex-direction: column; gap: 8px; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); }
+    .info > div { display: flex; justify-content: space-between; }
+    .info b { font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .fld { margin-top: 32px; }
+    .fld__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .fld__label { margin: 0; font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .conv { border: 0; background: none; padding: 0; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+    .conv__ic { width: 20px; height: 20px; border-radius: 50%; background: var(--rz-gray-02); display: grid; place-items: center; }
+    .money { display: flex; align-items: center; gap: 4px; }
+    .money input { flex: 1; min-width: 0; text-align: right; }
+    .money > span { flex: none; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); }
+    .money.is-zero input, .money.is-zero > span:not(.saletag) { color: var(--rz-gray-04); }
+    .money input { font-weight: 500; }
+    .money > .saletag { flex: none; height: 20px; box-sizing: border-box; margin-right: 4px; border-radius: 6px; background: var(--rz-gray-02); padding: 1px 4px 3px; font: 700 10px/15px var(--rz-font-sans); color: var(--rz-gray-06); }
+    .radios { display: flex; gap: 0; margin-top: 8px; }
+    .radios > * { flex: 0 0 172px; }
+    .note { margin: 0 0 16px; border-radius: 12px; background: #F7FCFF; padding: 16px; font: var(--rz-type-small01-regular); color: var(--rz-blue-03); }
+    .exp { border-radius: 12px; background: var(--rz-gray-01); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .exp + .exp { margin-top: 8px; }
+    .exp__head { display: flex; align-items: center; justify-content: space-between; font: var(--rz-type-small01-bold); color: var(--rz-black); }
+    .exp__rm { width: 16px; height: 16px; border: 1px solid var(--rz-gray-04); border-radius: 4px; background: var(--rz-white); padding: 0; display: grid; place-items: center; cursor: pointer; color: var(--rz-gray-05); }
+    .exp .rz-input { background: var(--rz-white); }
+    .exp__lbl { margin-top: 4px; }
+
+    .sum { background: var(--rz-gray-01); padding: 24px 16px 24px; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); }
+    .sum h4 { margin: 0 0 8px; font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .sum h4 + div { }
+    .sum > div { display: flex; justify-content: space-between; line-height: 20px; margin-bottom: 8px; }
+    .sum h4.sec2 { margin-top: 24px; }
+    .total { flex: none; background: var(--rz-white); padding: 0 16px 16px; }
+    .total__row { height: 72px; display: flex; align-items: center; justify-content: space-between; font: var(--rz-type-body01-bold); color: var(--rz-black); }
+    .total__row b { font: 700 20px/30px var(--rz-font-sans); color: var(--rz-primary); }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script src="../common/due-picker.js?v=3"></script>
+  <script src="../common/invoice.js?v=3"></script>
+  <script>
+    const R = Rallyz, I = Invoice;
+    const { $, go, store } = Onb;
+    const data0 = RzData.get();
+    if (!data0.academy) location.replace("./index.html");
+    const sid = Number(new URLSearchParams(location.search).get("sid"));
+    const s = data0.students[sid];
+    const ym = store.get("invYm") || I.nowYm();
+    const back = () => go("./invoice-create.html?keep=1");
+    if (!s) location.replace("./invoice-create.html?keep=1");
+
+    const extraMode = new URLSearchParams(location.search).get("mode") === "extra"; // 추가 생성: 조정값이 아닌 새 청구서를 작성
+    const adj = extraMode ? I.DEFAULT() : I.adjustOf(sid, ym);
+    adj.extras = adj.extras.map((e) => ({ ...e })); // edit a copy
+    const c0 = I.klassOf(s);
+    const kind = I.kindOf(c0);
+    const MAX_EXTRAS = 10;
+
+    /* ---------- header ---------- */
+    const initial = JSON.stringify(adj); // 이전화면으로 나갈 때 변경(작성 미완료) 여부 판단용 — 모든 입력 세팅 뒤에 다시 찍는다
+    let snap = initial;
+    const dirty = () => JSON.stringify(adj) !== snap;
+    const scr = () => document.querySelector(".rz-device__screen");
+    const leave = () => { // 작성 미완료 컨펌 (351:149710 추가 · 351:149795 저장)
+      if (!dirty()) { back(); return; }
+      R.showAlert(scr(), { message: `해당 청구금액 내역이 작성완료되지 않았습니다.\n${extraMode ? "추가하지" : "저장하지"} 않고 이전화면으로 이동하시겠습니까 ?`, cancelLabel: "아니오", confirmLabel: "예", onConfirm: back });
+    };
+    const header = R.FlowHeader({ title: "청구금액 조정", lead: "prev", onLead: leave });
+
+    /* ---------- 납부기한 선택 (375:162478) ---------- */
+    const dueBtn = $("button", "due-btn", [], { type: "button" });
+    const dueVal = () => adj.due || I.dueOf(ym);
+    const paintDue = () => { dueBtn.textContent = dueVal(); };
+    dueBtn.addEventListener("click", () => DuePicker.open({ value: dueVal(), onSave: (v) => { adj.due = v; paintDue(); } }));
+
+    /* ---------- student card ---------- */
+    const who = $("div", "who", [
+      $("div", "who__top", [$("b", "", [s.name]), s.phone || s.guardian || "-", R.Icon("solid/profile", { size: 40 })]),
+      $("div", "who__foot", [R.Chip({ label: "미생성", size: "tiny", type: "type04" }), $("span", "", ["납부기한", dueBtn])]),
+    ]);
+
+    /* ---------- inputs (state → adj; render() redraws what depends on it) ---------- */
+    const won = (v) => I.num(v).toLocaleString("ko-KR");
+    function moneyInput({ get, set, unit, aria }) {
+      const box = $("label", "rz-input money");
+      const input = $("input", "", [], { type: "text", inputmode: "numeric", placeholder: "0", "aria-label": aria });
+      const sync = () => { const n = I.num(get()); input.value = n ? won(n) : ""; box.classList.toggle("is-zero", !n); };
+      input.addEventListener("input", () => { set(String(I.num(input.value))); sync(); render(); });
+      const u = $("span", "", [unit]);
+      box.append(input, u);
+      sync();
+      return { box, u, input, sync };
+    }
+
+    const feeCb = R.Checkbox({ label: "수강료 미청구", labelStyle: "small01_regular", checked: adj.noFee, onChange: (on) => { adj.noFee = on; render(); } });
+    const infoBox = $("div", "info", [
+      $("div", "", [$("span", "", ["클래스명"]), $("span", "", [s.klass || "-"])]),
+      $("div", "", [$("span", "", [kind === "회차" ? "클래스 수강료" : "클래스 수강료"]), $("b", "", [`${I.fmt(I.num(c0?.fee))} 원`])]),
+    ]);
+
+    const discUnit = $("span", "conv__txt");
+    const convBtn = $("button", "conv", [$("span", "conv__ic", [R.Icon("line/ic24_conversion", { size: 20, color: "var(--rz-gray-06)" })]), discUnit], { type: "button" });
+    const discMax = () => (adj.unit === "pct" ? 100 : I.num(c0?.fee)); // %는 수강료 기준 비율(최대 100), 원은 절대 금액(최대 수강료)
+    const disc = moneyInput({ get: () => adj.discount, set: (v) => (adj.discount = String(Math.min(I.num(v), discMax()))), unit: adj.unit === "pct" ? "%" : "원", aria: "수강료 할인" });
+    const saleTag = $("span", "saletag", ["할인없음"]);
+    disc.box.prepend(saleTag);
+    convBtn.addEventListener("click", () => { // 원 ↔ % : 같은 할인액이 되도록 환산한다 (% = 수강료 대비 비율, 원 = 절대 금액)
+      const base = I.num(c0?.fee), cur = I.num(adj.discount);
+      if (adj.unit === "pct") { adj.unit = "won"; adj.discount = String(Math.round((base * cur) / 100)); }
+      else { adj.unit = "pct"; adj.discount = String(base ? Math.min(100, Math.round((cur / base) * 100)) : 0); }
+      disc.u.textContent = adj.unit === "pct" ? "%" : "원"; disc.sync(); render();
+    });
+
+    const monthsSel = R.Select({ value: `${adj.months}개월 분 청구`, size: 48, options: Array.from({ length: 12 }, (_, i) => `${i + 1}개월 분 청구`), onChange: (v) => { adj.months = parseInt(v, 10); render(); } });
+    const reason = R.Input({ placeholder: "할인 사유 입력", name: "reason", value: adj.reason, onInput: (v) => (adj.reason = v) });
+    const radios = $("div", "radios", ["계속 적용", "이번만 적용"].map((label) => R.Radio({ label, name: "scope", checked: adj.scope === label, onChange: () => (adj.scope = label) })));
+
+    const fld = (label, extra, ...kids) => $("div", "fld", [$("div", "fld__head", [$("p", "fld__label", [label]), extra]), ...kids]);
+    const sec1 = $("section", "sec", [
+      $("h3", "sec__title", ["청구금액 정보", feeCb]),
+      infoBox,
+      fld("수강료 할인", convBtn, disc.box),
+      ...(kind === "기간" ? [fld("청구 개월 분", null, monthsSel)] : []),
+      fld("할인 사유", null, reason, radios),
+    ]);
+
+    /* ---------- 기타경비 ---------- */
+    const addBtn = R.Button({ label: "추가", size: "t24", color: "grey", onClick: () => { if (adj.extras.length >= MAX_EXTRAS) return; adj.extras.push({ name: "", amount: "" }); renderExtras(); render(); } });
+    const extrasEl = $("div", "");
+    function renderExtras() {
+      addBtn.disabled = adj.extras.length >= MAX_EXTRAS; addBtn.classList.toggle("is-disabled", addBtn.disabled);
+      extrasEl.replaceChildren(...adj.extras.map((e, i) => {
+        const rm = $("button", "exp__rm", [R.Icon("line/16_minus", { size: 12, color: "var(--rz-gray-05)" })], { type: "button", "aria-label": "항목 삭제" });
+        rm.addEventListener("click", () => { adj.extras.splice(i, 1); renderExtras(); render(); });
+        const amt = moneyInput({ get: () => e.amount, set: (v) => (e.amount = v), unit: "원", aria: "금액" });
+        amt.box.classList.add("rz-input--48");
+        return $("div", "exp", [
+          $("div", "exp__head", ["항목명", rm]),
+          R.Input({ placeholder: "항목 입력", name: `extra${i}`, value: e.name, onInput: (v) => { e.name = v; render(); } }),
+          $("div", "exp__head exp__lbl", ["금액"]),
+          amt.box,
+        ]);
+      }));
+    }
+    const sec2 = $("section", "sec", [
+      $("h3", "sec__title", [$("span", "", ["기타경비 정보", $("small", "", ["(최대 10개)"])]), addBtn]),
+      $("p", "note", ["* 기타 경비를 추가하여 청구금액을 증액할 수 있습니다. 추가된 청구 항목은 영수증에 기재됩니다."]),
+      extrasEl,
+    ]);
+
+    /* ---------- 청구정보 (summary) + 최종 청구금액 ---------- */
+    const sum = $("div", "sum");
+    const totalEl = $("b", "", ["0 원"]);
+    function render() {
+      const c = I.calc(s, adj);
+      discUnit.textContent = adj.unit === "pct" ? "할인 단위 전환(원)" : "할인 단위 전환(%)";
+      saleTag.style.display = I.num(adj.discount) ? "none" : "";
+      const rows = [
+        $("h4", "", ["청구정보"]),
+        $("div", "", [$("span", "", ["클래스 수강료"]), $("span", "", [`${I.fmt(c.base)}원`])]),
+        $("div", "", [$("span", "", ["할인금액"]), $("span", "", [`- ${I.fmt(c.disc)}원${c.pct ? `(${c.pct}%)` : ""}`])]),
+        $("div", "", [$("span", "", ["청구 수강료"]), $("span", "", [kind === "기간" ? `${I.fmt(c.base - c.disc)}원 x ${c.months}개월` : `${I.fmt(c.tuition)}원`])]),
+      ];
+      if (adj.extras.length) {
+        rows.push($("h4", "sec2", ["기타경비 정보"]));
+        adj.extras.forEach((e) => rows.push($("div", "", [$("span", "", [e.name || "항목 미입력"]), $("span", "", [I.num(e.amount) ? `${I.fmt(e.amount)}원` : "금액 미입력"])])));
+      }
+      sum.replaceChildren(...rows);
+      totalEl.textContent = `${I.fmt(c.total)} 원`;
+    }
+
+    function focusRow(i, sel) { const row = extrasEl.children[i]; row?.scrollIntoView({ block: "center", behavior: "smooth" }); row?.querySelector(sel)?.focus({ preventScroll: true }); }
+    const save = R.Button({ label: "저장", size: 56, onClick: () => {
+      // 입력 검사 (납부기한 351:150623 → 청구항목 351:150689 → 청구금액 351:150755)
+      if (!dueVal()) { R.showAlert(scr(), { message: "납부 기한을 입력하세요." }); return; }
+      const bad = adj.extras.findIndex((e) => !e.name.trim() || !I.num(e.amount));
+      if (bad >= 0) {
+        const noName = !adj.extras[bad].name.trim();
+        R.showAlert(scr(), { message: noName ? "청구 항목명을 입력하세요." : "청구 금액을 입력하세요.", onConfirm: () => focusRow(bad, noName ? "input[name^=extra]" : "input[aria-label='금액']") });
+        return;
+      }
+      // 저장 컨펌 (351:149625 · 추가 생성 351:149540)
+      R.showAlert(scr(), {
+        message: extraMode ? `${s.name} 학생에게\n청구서를 추가로 생성하시겠습니까 ?` : `${s.name} 학생의\n청구서 내역을 저장하시겠습니까 ?`,
+        cancelLabel: "아니오", confirmLabel: "예",
+        onConfirm: () => {
+          if (extraMode) { I.create(s, sid, ym, "extra", { adj }); go("./invoice-create.html?keep=1"); }
+          else { I.saveAdjust(sid, ym, adj); go("./invoice-create.html?keep=1&adjusted=1"); }
+        },
+      });
+    } });
+    const total = $("div", "total", [$("div", "total__row", ["최종 청구금액", totalEl]), save]);
+
+    const scroll = $("div", "scroll", [$("div", "band", [who]), sec1, sec2, sum]);
+    const screen = $("div", "screen", [R.StatusBar(), header, scroll, total]);
+    document.getElementById("root").append(R.Device({ children: [screen] }));
+    paintDue();
+    renderExtras();
+    render();
+    snap = JSON.stringify(adj);
+  </script>
+</body>
+</html>

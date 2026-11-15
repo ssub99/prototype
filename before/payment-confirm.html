@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — 납부요청 확인</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [6.2.2.2.1.2.0]납부관리_미납 목록_납부요청 (360:159036, 선택 발송) · …납부요청(일괄) (360:159070, 미발송 전체 일괄 발송).
+    payment-manage › 납부요청 (대상 청구서 id: rz.payTargets, 방식: rz.payMode = sel | all). 예 → 발송 처리(sentAt) → payment-progress.html.
+    발송 실패 조건: 학생/학부모 연락처가 하나도 없는 학생(Invoice.sendable). Shared by before/ and after/ — keep both copies identical (title only differs).
+  -->
+  <style>
+    .title { margin: 32px 16px 24px; text-align: center; font: var(--rz-type-headline-bold); color: var(--rz-black); white-space: pre-line; }
+    .bills { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .bill { min-height: 97px; box-sizing: border-box; border-radius: 12px; background: var(--rz-gray-01); padding: 16px; }
+    .bill__klass { margin: 0; font: var(--rz-type-small01-regular); color: var(--rz-gray-05); line-height: 18px; }
+    .bill__row { margin-top: 4px; display: flex; justify-content: space-between; gap: 8px; font: var(--rz-type-body02-bold); color: var(--rz-black); line-height: 21px; }
+    .bill__row span:last-child { flex: none; }
+    .bill__due { margin: 8px 0 0 1px; font: var(--rz-type-small01-regular); color: var(--rz-gray-05); line-height: 18px; }
+    .bulk { text-align: center; padding: 32px 44px 0; }
+    .bulk h1 { margin: 0; font: var(--rz-type-headline-bold); color: var(--rz-black); white-space: pre-line; }
+    .bulk p { margin: 16px 0 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); white-space: pre-line; }
+    .bulk img { display: block; width: 230px; height: 240px; margin: 32px auto 0; }
+    .bar { flex: none; height: 88px; box-sizing: border-box; padding: 16px; background: var(--rz-white); }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script src="../common/invoice.js?v=3"></script>
+  <script>
+    const R = Rallyz, I = Invoice;
+    const { $, go, store } = Onb;
+    const data0 = RzData.get();
+    if (!data0.academy) location.replace("./index.html");
+    const back = () => go("./payment-manage.html?keep=1");
+    const mode = store.get("payMode") === "all" ? "all" : "sel";
+    let ids = []; try { ids = JSON.parse(store.get("payTargets") || "[]"); } catch { /* */ }
+    const targets = I.unpaid().filter(({ b }) => ids.includes(b.id));
+    if (!targets.length) location.replace("./payment-manage.html?keep=1");
+
+    function send() {
+      const okC = [], failC = [], sent = [];
+      targets.forEach(({ b, s }) => {
+        const k = s.klass || "-";
+        if (I.sendable(s)) { sent.push(b.id); if (!okC.includes(k)) okC.push(k); } else if (!failC.includes(k)) failC.push(k);
+      });
+      I.markSent(sent);
+      store.set("payResult", JSON.stringify({ okClasses: okC, failClasses: failC }));
+      go("./payment-progress.html");
+    }
+
+    let content;
+    if (mode === "sel") {
+      content = [
+        $("h1", "title", ["선택한 학생에게 납부요청 알림 및\n간편 결제 청구서를 발송하시겠습니까 ?"]),
+        $("div", "bills", targets.map(({ b, s }) => {
+          const c = I.klassOf(s);
+          return $("div", "bill", [
+            $("p", "bill__klass", [`${s.klass || "-"}${c?.type ? `(${c.type})` : ""}`]),
+            $("div", "bill__row", [$("span", "", [s.name]), $("span", "", [`${I.fmt(b.calc.total)}원${b.calc.suffix}`])]),
+            $("p", "bill__due", [`납부기한 : ${I.longOf(b.due)}`]),
+          ]);
+        })),
+      ];
+    } else {
+      content = [$("div", "bulk", [
+        $("h1", "", [`${data0.academy.name}의\n미발송된 납부 요청 알림 및 간편 결제\n청구서를 일괄 발송하시겠습니까?`]),
+        $("p", "", ["생성된 청구서 모든건에 대하여\n납부요청이 일괄발송 됩니다."]),
+        $("img", "", [], { src: "../assets/onboarding/invoice-bulk.svg", alt: "" }),
+      ])];
+    }
+    const bar = $("div", "bar", [R.ButtonGroup({ primary: "예", secondary: "아니오", secondaryColor: "grey", onPrimary: send, onSecondary: back })]);
+    document.getElementById("root").append(R.Device({ children: [$("div", "screen", [R.StatusBar(), R.FlowHeader({ lead: "close", onLead: back }), $("div", "scroll", content), bar])] }));
+  </script>
+</body>
+</html>

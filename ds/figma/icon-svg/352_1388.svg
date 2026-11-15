@@ -1,0 +1,13 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M13.8259 10.4365L8.27303 16.6834L7.49486 15.9917L13.0477 9.74476L13.8259 10.4365Z" fill-rule="evenodd" clip-rule="evenodd" fill="white"/>
+<path d="M24.9316 9.74328L19.3787 14.255L18.7222 13.4469L24.275 8.93522L24.9316 9.74328Z" fill-rule="evenodd" clip-rule="evenodd" fill="white"/>
+<path d="M13.2695 11L19.7784 12.7441L19.5089 13.7498L13 12.0057L13.2695 11Z" fill-rule="evenodd" clip-rule="evenodd" fill="white"/>
+<circle cx="7" cy="17" r="2" fill="#5887FF"/>
+<circle cx="13" cy="11" r="2" fill="#5887FF"/>
+<circle cx="19" cy="13" r="2" fill="#5887FF"/>
+<circle cx="25" cy="9" r="2" fill="#5887FF"/>
+<path d="M23 17C23 15.8954 23.8954 15 25 15V15C26.1046 15 27 15.8954 27 17V27H23V17Z" fill="#FFC745"/>
+<path d="M17 21C17 19.8954 17.8954 19 19 19V19C20.1046 19 21 19.8954 21 21V27H17V21Z" fill="#FFC745"/>
+<path d="M11 19C11 17.8954 11.8954 17 13 17V17C14.1046 17 15 17.8954 15 19V27H11V19Z" fill="#FFC745"/>
+<path d="M5 25C5 23.8954 5.89543 23 7 23V23C8.10457 23 9 23.8954 9 25V27H5V25Z" fill="#FFC745"/>
+</svg>

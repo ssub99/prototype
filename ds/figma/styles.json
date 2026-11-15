@@ -1,0 +1,479 @@
+{
+ "textStyles": [
+  {
+   "id": "S:825fe7b2acb2a3c3439e10ecca79ac7b360f91f4,",
+   "name": "Headline/Bold",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Bold"
+   },
+   "fontSize": 20,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 30
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:a42552f6526236e4c33b03910c91d4eb22994cf7,",
+   "name": "Headline/Medium",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Medium"
+   },
+   "fontSize": 20,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 30
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:8d33af44e589adbb9a521d8d4805488fecb6ce9a,",
+   "name": "Headline/Regular",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Regular"
+   },
+   "fontSize": 20,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 30
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:aeca85e9f513f07dd1680540bc183b38f7b6ddc8,",
+   "name": "Body01/Bold",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Bold"
+   },
+   "fontSize": 16,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 24
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:9760463514250d8b451107b3b7f2dd20a2ae66bb,",
+   "name": "Body01/Medium",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Medium"
+   },
+   "fontSize": 16,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 24
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:0d58f6564cf4e8813d6b73b799f2337d9adb73aa,",
+   "name": "Body01/Regular",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Regular"
+   },
+   "fontSize": 16,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 24
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:80bce599c50fb7378ff533678425efd9f4c7e6a0,",
+   "name": "Body02/Bold",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Bold"
+   },
+   "fontSize": 14,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 21
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:16bd267a0a0c35cf92376f75cc1f02195356f632,",
+   "name": "Body02/Medium",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Medium"
+   },
+   "fontSize": 14,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 21
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:46b01dbc45b3b064b2bc5caa81c849f033e1c865,",
+   "name": "Body02/Regular",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Regular"
+   },
+   "fontSize": 14,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 21
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:4563397e4fc6f2687abb011b77eca85300f965b5,",
+   "name": "Small01/Bold",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Bold"
+   },
+   "fontSize": 12,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 18
+   },
+   "letterSpacing": {
+    "unit": "PERCENT",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:add731d8109dbb80408d18299b26ecc45104b5e6,",
+   "name": "Small01/Medium",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Medium"
+   },
+   "fontSize": 12,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 18
+   },
+   "letterSpacing": {
+    "unit": "PERCENT",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:38869248363cea190ad465520058d77a20d3e6d3,",
+   "name": "Small01/Regular",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Regular"
+   },
+   "fontSize": 12,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 18
+   },
+   "letterSpacing": {
+    "unit": "PERCENT",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:3ad84179c8f2390cb74ac876515c818a3d80a7f2,",
+   "name": "Button01/Bold",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Bold"
+   },
+   "fontSize": 14,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 21
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:16a2adfd0460147124e45cbe6a1fe4863d3c317f,",
+   "name": "Button01/Medium",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Medium"
+   },
+   "fontSize": 14,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 21
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:7fbd38776a20e1e3ed524b13246d09db5a320dde,",
+   "name": "Button01/Regular",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Regular"
+   },
+   "fontSize": 14,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 21
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:a389bb3afdcd1520c6d90561298d9a1c5ea4a4fc,",
+   "name": "Button02/Bold",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Bold"
+   },
+   "fontSize": 12,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 18
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:cb0a46e82d40904554c736d77193645b5c0e07ba,",
+   "name": "Button02/Medium",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Medium"
+   },
+   "fontSize": 12,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 18
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  },
+  {
+   "id": "S:396c52b256776bad61bebc618fd04902012f9753,",
+   "name": "Button02/Regular",
+   "fontName": {
+    "family": "Pretendard",
+    "style": "Regular"
+   },
+   "fontSize": 12,
+   "lineHeight": {
+    "unit": "PIXELS",
+    "value": 18
+   },
+   "letterSpacing": {
+    "unit": "PIXELS",
+    "value": 0
+   }
+  }
+ ],
+ "paintStyles": [
+  {
+   "id": "S:f1ab21e54cc8e03e7cb42b1631ad10ded8b75ce3,",
+   "name": "Signature_Color",
+   "opacity": 1
+  },
+  {
+   "id": "S:ac0499e8933261a01a2ecdbd31b90b7c81de30ce,",
+   "name": "Red",
+   "hex": "#FF3434",
+   "opacity": 1
+  },
+  {
+   "id": "S:5f1ebecff1e4f75abf9853ffb688e1fb0e26db34,",
+   "name": "White",
+   "hex": "#FFFFFF",
+   "opacity": 1
+  },
+  {
+   "id": "S:1ce1a344890afe995e82b287ad2305c52115c170,",
+   "name": "Black",
+   "hex": "#1F2025",
+   "opacity": 1
+  },
+  {
+   "id": "S:fe73716385d8650bc9eae8916e9e4395599d580a,",
+   "name": "Green/GGreen",
+   "hex": "#E6F8EB",
+   "opacity": 1
+  },
+  {
+   "id": "S:4aed4f1c618bd65f64b81f9590e00446dec4094e,",
+   "name": "Green/Green_01",
+   "hex": "#CDF0D8",
+   "opacity": 1
+  },
+  {
+   "id": "S:bffe149d82dc9ace8bacdcd4e50786ecf3a5ac80,",
+   "name": "Green/Green_02",
+   "hex": "#9CE1B1",
+   "opacity": 1
+  },
+  {
+   "id": "S:8eaa6e8c78b3f458897ff686734ed2134ccb2566,",
+   "name": "Green/Green_03",
+   "hex": "#6AD389",
+   "opacity": 1
+  },
+  {
+   "id": "S:96650efa3cde3644877c0883a05f95020561fac0,",
+   "name": "Green/Green_04",
+   "hex": "#39C462",
+   "opacity": 1
+  },
+  {
+   "id": "S:46aa4b9c144a3a0b1caffca0ab04faa985d1167d,",
+   "name": "Green/Primary_Fresh green",
+   "hex": "#07B53B",
+   "opacity": 1
+  },
+  {
+   "id": "S:d2c46d38202f456a54e008c4ba32c2a5b76e65fe,",
+   "name": "Green/Green_05",
+   "hex": "#079732",
+   "opacity": 1
+  },
+  {
+   "id": "S:1b4b92b3970cf45725e5acba774d4a0a9d516dd7,",
+   "name": "Green/Green_06",
+   "hex": "#047B28",
+   "opacity": 1
+  },
+  {
+   "id": "S:015a6341ef90e3658c5cc34dde8f6408bd85e0ac,",
+   "name": "Blue/GBlue",
+   "hex": "#EBEFFA",
+   "opacity": 1
+  },
+  {
+   "id": "S:2e22ad94b12a18a0a6e0bbaadd5ec03df4b1c55e,",
+   "name": "Blue/Blue_01",
+   "hex": "#C8D7FF",
+   "opacity": 1
+  },
+  {
+   "id": "S:4a01b834dbf9115ad8b697c5fe7bacf80efe671f,",
+   "name": "Blue/Blue_02",
+   "hex": "#94B2FF",
+   "opacity": 1
+  },
+  {
+   "id": "S:0bc8765839eeb4c7bb8bf569a2f474abb5ec87eb,",
+   "name": "Blue/Blue_03",
+   "hex": "#5887FF",
+   "opacity": 1
+  },
+  {
+   "id": "S:aa8a2f39b23569dd6bfa51a3358af56d85e9e975,",
+   "name": "Blue/Blue_04",
+   "hex": "#2D63EC",
+   "opacity": 1
+  },
+  {
+   "id": "S:969f821d014c6e495fd1b0ea1fe0ebe46b67bd85,",
+   "name": "Blue/Secondary_Blue",
+   "hex": "#213DCE",
+   "opacity": 1
+  },
+  {
+   "id": "S:135b9b787cd08a911e06b721c5b4fe93dc2eed25,",
+   "name": "Blue/Blue_05",
+   "hex": "#1E33A6",
+   "opacity": 1
+  },
+  {
+   "id": "S:d60ceeab5c53d4c58b561a54a0ac3dfacb61068f,",
+   "name": "Blue/Blue_06",
+   "hex": "#192776",
+   "opacity": 1
+  },
+  {
+   "id": "S:8e8d2be02e11e100e7d4e8744b7e9f1f09a87982,",
+   "name": "Gray/Gray_01",
+   "hex": "#F4F6FA",
+   "opacity": 1
+  },
+  {
+   "id": "S:9e33df8a66d828de699a763343863417e129832d,",
+   "name": "Gray/Gray_02",
+   "hex": "#ECEEF4",
+   "opacity": 1
+  },
+  {
+   "id": "S:bc9f9ae471ae24851927117839b5e833a19bca42,",
+   "name": "Gray/Gray_03",
+   "hex": "#DEE1E9",
+   "opacity": 1
+  },
+  {
+   "id": "S:58fd0df051928f9129a95e0b0e12dabb03ba1f77,",
+   "name": "Gray/Gray_04",
+   "hex": "#B6BCC9",
+   "opacity": 1
+  },
+  {
+   "id": "S:03f0e6190ef47c755a375c7c96df1d4962b3c647,",
+   "name": "Gray/Gray_05",
+   "hex": "#8D939E",
+   "opacity": 1
+  },
+  {
+   "id": "S:8532af19a8e5adc2e46c3b455cfefa65620d437f,",
+   "name": "Gray/Gray_06",
+   "hex": "#646976",
+   "opacity": 1
+  },
+  {
+   "id": "S:785c1b1c04125dc3605b62ef5ae9e3bf2f225eec,",
+   "name": "Gray/Gray_07",
+   "hex": "#393E4B",
+   "opacity": 1
+  },
+  {
+   "id": "S:b5fe5ab7488cd166cc0f054bffa98bcb10d042c7,",
+   "name": "Slide/Dark fill",
+   "hex": "#3B3B3B",
+   "opacity": 1
+  }
+ ]
+}

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz — 학생 등록 완료</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!-- Figma: [#.#.#.#.#.#.#]온보딩_학생 등록_발송완료_온보딩페이지 (286:36463) -->
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script>
+    const { ButtonGroup } = Rallyz;
+    const { $, shell, go } = Onb;
+
+    const body = $("div", "info");
+    body.innerHTML = `
+      <img class="info__hands" src="../assets/onboarding/done-hands.svg" alt="" />
+      <h1 class="info__title">학생등록이 완료되었습니다.\n<strong>이제 랠리즈를 시작해볼까요?</strong></h1>
+      <p class="info__desc">랠리즈를 사용할 모든 준비가 완료되었어요.\n출결부터 결제까지 간편하게 시작하세요!</p>`;
+
+    const footer = $("div", "footer", [ButtonGroup({
+      primary: "홈으로", secondary: "추가 등록", secondaryColor: "grey",
+      onPrimary: () => go("./home.html"),
+      onSecondary: () => go("./student-register.html"),
+    })]);
+
+    shell({ title: "학생 등록", step: "3/3", onLead: () => go("./student-register.html"), body: [body], footer });
+  </script>
+</body>
+</html>

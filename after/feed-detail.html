@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz — 피드 글 상세보기</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <link rel="stylesheet" href="../common/feed.css?v=2" />
+  <!--
+    Figma: [7.1.1.2.0.0.0]피드_글상세보기1·2 (360:154170 · 154209) · 답글쓰기 (154255 · 154345) · 댓글수정 (154437) · 댓글삭제 (154791) · 비밀댓글 (154574 · 154652 · 154731 · 154504)
+           표정(N) 시트 (360:153928) · [9]읽은 사람 보기 (360:153541 · 153580 · 153591 · 153497 · 153656 · 153832 · 154855)
+    ?id=<피드 id>. 파일 첨부/업로드는 구현하지 않는다(글만): 댓글의 "파일 업로드"는 동작 없음. 현재 사용자 = 학원장(Feed.me()) — 학생·보호자 쪽 사용자는 없어서
+    "비밀댓글 권한 없음"(360:154731)은 화면에 나타날 일이 없고, 읽음·표정은 Feed.add 의 모의 데이터를 쓴다.
+    Shared by before/ and after/ — keep both copies identical (title only differs).
+  -->
+  <style>
+    .dt { background: var(--rz-white); }
+    .dt__who { margin: 0 16px; display: flex; align-items: center; gap: 8px; height: 64px; border-bottom: 1px solid var(--rz-gray-02); }
+    .dt__more { flex: none; border: 0; background: none; padding: 0; display: inline-flex; margin-left: 4px; cursor: pointer; }
+    .dt__text { margin: 0; padding: 24px 16px 16px; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); line-height: 21px; white-space: pre-wrap; word-break: break-word; }
+    .dt__tags { padding: 0 16px 24px; display: flex; flex-wrap: wrap; gap: 8px; font: 500 12px/18px var(--rz-font-sans); color: var(--rz-gray-04); }
+    .rx { background: var(--rz-gray-02); padding: 16px; position: relative; min-height: 102px; box-sizing: border-box; }
+    .rx__sum { margin: 0; display: flex; gap: 16px; font: 500 12px/18px var(--rz-font-sans); color: var(--rz-gray-06); }
+    .rx__row { margin-top: 12px; display: flex; align-items: center; gap: 8px; }
+    .rx__add { flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-primary); display: grid; place-items: center; padding: 0; cursor: pointer; }
+    .rx__stack { display: inline-flex; align-items: center; border: 0; background: none; padding: 0; cursor: pointer; }
+    .rx__stack img { margin-left: -12px; border-radius: 50%; }
+    .rx__stack img:first-child { margin-left: 0; }
+    .rx__pick { position: absolute; left: 16px; top: 64px; z-index: 20; display: flex; gap: 6px; padding: 8px; border-radius: 12px; background: var(--rz-white); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18); }
+    .rx__pick button { border: 0; background: none; padding: 2px; border-radius: 50%; cursor: pointer; display: inline-flex; }
+    .rx__pick button.is-on { box-shadow: 0 0 0 2px var(--rz-primary); }
+    .cms { background: var(--rz-white); }
+    .cm { position: relative; padding: 16px; display: flex; gap: 10px; border-bottom: 1px solid var(--rz-gray-02); }
+    .cm--reply { margin-left: 16px; padding-left: 0; border-top: 1px solid var(--rz-gray-02); border-bottom: 0; }
+    .cm--reply + .cm--reply { border-top: 0; }
+    .cm__main { flex: 1; min-width: 0; }
+    .cm__head { display: flex; align-items: center; gap: 4px; height: 24px; }
+    .cm__head b { font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .cm__head small { font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+    .cm__head .sp { flex: 1; }
+    .cm__head button { border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
+    .cm__text { margin: 4px 0 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); line-height: 21px; white-space: pre-wrap; word-break: break-word; }
+    .cm__foot { margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font: var(--rz-type-small01-regular); }
+    .cm__date { color: var(--rz-gray-04); }
+    .cm__reply { border: 0; background: none; padding: 0; cursor: pointer; font: var(--rz-type-small01-regular); color: var(--rz-black); }
+    .cm--gone { background: var(--rz-gray-01); color: var(--rz-gray-04); font: var(--rz-type-body02-regular); padding: 16px; display: block; border-bottom: 1px solid var(--rz-white); }
+    .cm--gone.cm--reply { margin-left: 0; padding-left: 32px; }
+    .cm--secret-plain { display: block; }
+    .cm--secret-plain .cm__text { color: var(--rz-gray-06); margin-top: 0; }
+    .cm--edit, .cm--compose { background: #E6F8EB; display: block; padding: 0; border-bottom: 0; }
+    .cm--edit .cm__in, .cm--compose .cm__in { padding: 16px; display: flex; gap: 10px; }
+    .cm__ta { display: block; width: 100%; min-height: 21px; border: 0; outline: none; resize: none; background: none; padding: 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); line-height: 21px; }
+    .cm__ta::placeholder { color: var(--rz-gray-04); }
+    .cbar { height: 48px; padding: 0 16px; background: var(--rz-gray-02); display: flex; align-items: center; gap: 16px; font: 500 12px/18px var(--rz-font-sans); color: var(--rz-gray-06); }
+    .cbar .rz-check { font: 500 12px/18px var(--rz-font-sans); color: var(--rz-gray-06); }
+    .cbar__file { display: inline-flex; align-items: center; gap: 4px; }
+    .cbar__sp { flex: 1; }
+    .cbar__btn { border: 0; background: none; padding: 0; font: 700 12px/18px var(--rz-font-sans); color: var(--rz-gray-04); cursor: pointer; }
+    .cbar__btn.is-on { color: var(--rz-primary); }
+    .cbar__btn--cancel { font-weight: 500; color: var(--rz-gray-06); }
+    .composer { position: sticky; bottom: 0; z-index: 10; background: var(--rz-white); border-top: 1px solid var(--rz-gray-02); }
+    .composer .cm__in { padding: 16px; display: flex; gap: 10px; }
+    .cmenu { position: absolute; right: 16px; top: 44px; z-index: 30; width: 136px; padding: 12px 0; border-radius: 8px; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-03), 0 4px 12px rgba(0, 0, 0, 0.08); display: flex; flex-direction: column; text-align: center; }
+    .cmenu button { height: 32px; border: 0; background: none; padding: 0; cursor: pointer; font: var(--rz-type-body02-regular); color: var(--rz-black); }
+    .rdr { position: absolute; inset: 0; z-index: 80; background: var(--rz-white); display: flex; flex-direction: column; }
+    .rdr__body { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+    .rdr__body::-webkit-scrollbar { display: none; }
+    .rg { padding: 0 16px; }
+    .rg + .rg { margin-top: 12px; border-top: 1px solid var(--rz-gray-02); }
+    .rg__head { height: 48px; margin-top: 4px; display: flex; align-items: center; gap: 8px; }
+    .rg__title { flex: 1; font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .rg__pill { height: 24px; padding: 0 8px; border: 0; border-radius: 8px; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-05); display: inline-flex; align-items: center; gap: 2px; cursor: pointer; font: 700 12px/18px var(--rz-font-sans); color: var(--rz-gray-06); }
+    .rg__tog { width: 24px; height: 24px; border: 0; border-radius: 50%; background: var(--rz-gray-02); display: grid; place-items: center; padding: 0; cursor: pointer; }
+    .rg .fd-row { padding: 0; height: 48px; }
+    .rg__ico { width: 24px; height: 24px; border: 0; border-radius: 50%; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-03); display: grid; place-items: center; padding: 0; cursor: pointer; }
+    .rg__icos { display: flex; gap: 8px; }
+    .ck { width: 24px; height: 24px; flex: none; }
+    .cp { display: flex; align-items: center; gap: 8px; padding: 12px 16px 4px; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+    .cp button { border: 0; background: none; padding: 0; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font: inherit; color: inherit; }
+    .btn-green { background: #33CC33; }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script src="../common/feed.js?v=2"></script>
+  <script>
+    const R = Rallyz, F = Feed;
+    const { $, go } = Onb;
+    if (!RzData.get().academy) location.replace("./index.html");
+    const id = new URLSearchParams(location.search).get("id");
+    if (!F.get(id)) location.replace("./feed.html");
+    const ME = F.me();
+    const cur = () => F.get(id);
+    const screenEl = () => document.querySelector(".rz-device__screen");
+    const canSee = (c) => c.mine || true; // 현재 사용자는 학원장 → 모든 비밀댓글 열람 가능(권한 없는 사용자는 이 프로토타입에 없다)
+    const state = { replyTo: null, editing: null, menu: null, reactMenu: false, composeSecret: false };
+    const lock = () => R.Icon("line/ic24_lock", { size: 24, color: "var(--rz-gray-06)" });
+    const more = () => R.Icon("line/ic24_more", { size: 24, color: "var(--rz-gray-04)" });
+    const person = (size) => F.profile(size);
+    const comments = () => cur().comments || [];
+    const commit = (fn) => { F.update(id, fn); };
+
+    /* ---------- post ---------- */
+    const reads = $("button", "fd-reads", [], { type: "button" });
+    reads.addEventListener("click", () => openReaders());
+    const meta = $("div", "rx");
+    const postBox = $("div", "dt");
+    function paintPost() {
+      const f = cur();
+      reads.replaceChildren($("em", "", [`${F.readCount(f)}명`]), " 읽음");
+      postBox.replaceChildren(
+        $("div", "dt__who", [person(32), $("div", "fd-who__txt", [$("p", "fd-who__name", [f.author.name, $("small", "", [f.author.role])]), $("p", "fd-who__date", [F.fmtDate(f.at)])]), reads,
+          $("button", "dt__more", [more()], { type: "button", "aria-label": "더보기" })]), // 글 더보기 메뉴 디자인 없음 → 동작 없음
+        $("p", "dt__text", [f.content]),
+        ...(f.tags?.length ? [$("div", "dt__tags", f.tags.map((t) => $("span", "", [`# ${t}`])))] : []),
+      );
+    }
+
+    /* ---------- 표정 ---------- */
+    function paintMeta() {
+      const f = cur(), rs = f.reactions || [];
+      const used = [...new Set(rs.map((r) => r.emoji))];
+      const add = $("button", "rx__add", [R.Icon("line/ic24_add", { size: 24, color: "var(--rz-primary)" })], { type: "button", "aria-label": "표정 남기기" });
+      add.addEventListener("click", (e) => { e.stopPropagation(); state.reactMenu = !state.reactMenu; paintMeta(); });
+      const row = $("div", "rx__row", [add]);
+      if (used.length) { const stack = $("button", "rx__stack", used.map((n) => F.emojiImg(n, 32)), { type: "button", "aria-label": "표정 보기" }); stack.addEventListener("click", openReactions); row.append(stack); }
+      const kids = [$("p", "rx__sum", [$("span", "", [`표정 ${rs.length}`]), $("span", "", [`댓글 ${F.commentCount(f)}`])]), row];
+      if (state.reactMenu) { // 표정 고르기 — 디자인에 없는 최소 팝오버(표정 시트와 같은 5종)
+        const mineNow = rs.find((r) => r.key === "me");
+        kids.push($("div", "rx__pick", [1, 2, 3, 4, 5].map((n) => {
+          const b = $("button", mineNow?.emoji === n ? "is-on" : "", [F.emojiImg(n, 32)], { type: "button", "aria-label": `표정 ${n}` });
+          b.addEventListener("click", (e) => { e.stopPropagation(); commit((x) => { x.reactions = (x.reactions || []).filter((r) => r.key !== "me"); if (mineNow?.emoji !== n) x.reactions.push({ key: "me", name: ME.name, role: ME.role, emoji: n }); }); state.reactMenu = false; paintMeta(); });
+          return b;
+        })));
+      }
+      meta.replaceChildren(...kids);
+    }
+    function openReactions() { // 표정(N) 시트 (360:153928)
+      const rs = cur().reactions || [];
+      const counts = [1, 2, 3, 4, 5].map((n) => [n, rs.filter((r) => r.emoji === n).length]).filter(([, c]) => c);
+      const chips = $("div", "", counts.map(([n, c]) => $("span", "", [F.emojiImg(n, 32), $("b", "", [String(c)])])));
+      chips.style.cssText = "display:flex;gap:20px;align-items:center;height:48px;padding:0 16px;background:var(--rz-gray-01);font:700 14px/21px var(--rz-font-sans)";
+      chips.querySelectorAll("span").forEach((s) => { s.style.cssText = "display:inline-flex;align-items:center;gap:6px"; });
+      const body = $("div", "", [chips, ...rs.map((r) => $("div", "fd-row", [person(32), $("div", "fd-row__txt", [r.name, $("small", "", [r.role])]), F.emojiImg(r.emoji, 32)]))]);
+      F.sheet({ title: `표정(${rs.length})`, body });
+    }
+
+    /* ---------- 댓글 ---------- */
+    const list = $("div", "cms");
+    function bar({ placeholderBtn, onCancel, onSubmit, secret, onSecret, canSubmit }) {
+      const cb = R.Checkbox({ label: "비밀댓글", labelStyle: "small01_regular", checked: secret, onChange: (on) => onSecret(on) });
+      const kids = [cb, $("span", "cbar__file", [R.Icon("line/16_file03", { size: 16, color: "var(--rz-gray-06)" }), "파일 업로드"]), $("span", "cbar__sp")]; // 파일 업로드는 구현하지 않음(동작 없음)
+      if (onCancel) { const c = $("button", "cbar__btn cbar__btn--cancel", ["취소"], { type: "button" }); c.addEventListener("click", onCancel); kids.push(c); }
+      const ok = $("button", "cbar__btn", [placeholderBtn], { type: "button" });
+      ok.addEventListener("click", () => { if (canSubmit()) onSubmit(); });
+      kids.push(ok);
+      const b = $("div", "cbar", kids);
+      b._ok = ok;
+      return b;
+    }
+    function composeBox({ placeholder, init = "", secret = false, parent = null, submitLabel = "등록", cancel, onDone, editingId = null }) {
+      let text = init, sec = secret;
+      const ta = $("textarea", "cm__ta", [], { placeholder, rows: "1", "aria-label": placeholder });
+      ta.value = init;
+      const grow = () => { ta.style.height = "auto"; ta.style.height = Math.max(21, ta.scrollHeight) + "px"; };
+      const b = bar({ placeholderBtn: submitLabel, onCancel: cancel, secret, onSecret: (on) => { sec = on; }, canSubmit: () => !!text.trim(),
+        onSubmit: () => {
+          if (editingId) commit((x) => { const c = x.comments.find((y) => y.id === editingId); if (c) { c.text = text.trim(); c.secret = sec; } });
+          else commit((x) => { x.comments.push({ id: `c${Date.now()}`, parent, name: ME.name, role: ME.role, text: text.trim(), secret: sec, at: Date.now(), deleted: false, mine: true }); });
+          onDone();
+        } });
+      const paint = () => { b._ok.classList.toggle("is-on", !!text.trim()); };
+      ta.addEventListener("input", () => { text = ta.value; grow(); paint(); });
+      const inner = $("div", "cm__in", [person(24), $("div", "cm__main", [ta])]);
+      setTimeout(() => { grow(); paint(); if (editingId || parent) ta.focus(); }, 0);
+      return { inner, bar: b };
+    }
+    function menuFor(c) {
+      const m = $("div", "cmenu", [["수정", () => { state.editing = c.id; state.replyTo = null; }], ["삭제", () => { commit((x) => { const t = x.comments.find((y) => y.id === c.id); if (t) t.deleted = true; }); }]].map(([l, fn]) => {
+        const b = $("button", "", [l], { type: "button" });
+        b.addEventListener("click", (e) => { e.stopPropagation(); state.menu = null; fn(); paintAll(); });
+        return b;
+      }));
+      return m;
+    }
+    function item(c, isReply) {
+      if (c.deleted) return $("div", `cm cm--gone${isReply ? " cm--reply" : ""}`, [isReply ? "답글이 삭제되었습니다." : "댓글이 삭제되었습니다."]);
+      if (state.editing === c.id) { // 댓글 수정 (360:154437)
+        const box = composeBox({ placeholder: "댓글을 남겨주세요.", init: c.text, secret: c.secret, submitLabel: "수정", editingId: c.id, cancel: () => { state.editing = null; paintAll(); }, onDone: () => { state.editing = null; paintAll(); } });
+        return $("div", `cm cm--edit${isReply ? " cm--reply" : ""}`, [box.inner, box.bar]);
+      }
+      if (c.secret && !canSee(c)) return $("div", `cm cm--secret-plain${isReply ? " cm--reply" : ""}`, [$("p", "cm__text", ["비밀댓글입니다."]), $("p", "cm__date", [F.fmtDate(c.at)])]);
+      const head = $("div", "cm__head", [$("b", "", [c.name]), $("small", "", [c.role]), $("span", "sp")]);
+      if (c.secret) head.append(lock());
+      if (c.mine) { const mb = $("button", "", [more()], { type: "button", "aria-label": "더보기" }); mb.addEventListener("click", (e) => { e.stopPropagation(); state.menu = state.menu === c.id ? null : c.id; paintAll(); }); head.append(mb); }
+      const foot = $("div", "cm__foot", [$("span", "cm__date", [F.fmtDate(c.at)])]);
+      if (!isReply) { const rb = $("button", "cm__reply", ["답글 쓰기"], { type: "button" }); rb.addEventListener("click", () => { state.replyTo = c.id; state.editing = null; paintAll(); }); foot.append(rb); }
+      const el = $("div", `cm${isReply ? " cm--reply" : ""}`, [person(24), $("div", "cm__main", [head, $("p", "cm__text", [c.text]), foot])]);
+      if (state.menu === c.id) el.append(menuFor(c));
+      return el;
+    }
+    function paintList() {
+      const all = comments(), tops = all.filter((c) => !c.parent), out = [];
+      tops.forEach((c) => {
+        out.push(item(c, false));
+        all.filter((r) => r.parent === c.id).forEach((r) => out.push(item(r, true)));
+        if (state.replyTo === c.id) { // 답글쓰기 (360:154255)
+          const box = composeBox({ placeholder: "답글을 남겨주세요.", parent: c.id, cancel: () => { state.replyTo = null; paintAll(); }, onDone: () => { state.replyTo = null; paintAll(); } });
+          out.push($("div", "cm cm--compose", [box.inner, box.bar]));
+        }
+      });
+      list.replaceChildren(...out);
+    }
+
+    /* 하단 댓글 입력 (sticky) */
+    const composer = $("div", "composer");
+    function paintComposer() {
+      const box = composeBox({ placeholder: "댓글을 남겨주세요.", secret: false, onDone: () => { paintAll(); paintComposer(); } });
+      composer.replaceChildren(box.inner, box.bar);
+    }
+    function paintAll() { paintMeta(); paintList(); }
+
+    /* ---------- 읽은 사람 보기 (full page) ---------- */
+    function openReaders() {
+      const f = cur();
+      let tab = 0; const collapsed = { 학생: false, 보호자: false };
+      const x = $("button", "", [R.Icon("line/ic24_close-type01", { size: 20, color: "var(--rz-gray-07)" })], { type: "button", "aria-label": "닫기" });
+      x.style.cssText = "border:0;background:none;padding:0;display:inline-flex;cursor:pointer";
+      const header = R.FlowHeader({ title: "읽은 사람 보기", lead: "close", onLead: () => ov.remove() });
+      const readList = (f.targets || []).filter((t) => f.readers && f.readers[t.key]);
+      const unread = (f.targets || []).filter((t) => !(f.readers && f.readers[t.key]));
+      const tabs = R.Tabs({ type: "tap01", items: [`읽음 ${readList.length}`, `읽지 않음 ${unread.length}`], selected: 0, onChange: (i) => { tab = i; paint(); } });
+      const body = $("div", "rdr__body");
+      const toast = (t) => R.showToast(screenEl(), { text: t }, { bottom: 48 });
+      function confirmAll() { // 읽지 않은 사람에게 알림 발송 (360:153497 · 153656)
+        const dim = $("div", "fd-dim", [$("div", "fd-modal", [
+          $("img", "", [], { src: "../assets/onboarding/invoice-bulk.svg", alt: "" }),
+          $("h2", "", ["읽지 않은 사람에게\n알림을 발송하시겠습니까?"]),
+          $("p", "", ["아래의 확인 버튼을 누르면\n랠리즈 앱 푸시메세지로 발송됩니다."]),
+          $("div", "fd-modal__btns", [R.Button({ label: "취소", size: 56, variant: "line", color: "grey", onClick: () => dim.remove() }), R.Button({ label: "확인", size: 56, onClick: () => { dim.remove(); ov.remove(); toast("알림이 발송되었습니다."); } })]),
+        ])]);
+        screenEl().append(dim);
+      }
+      function chatSheet(list, only) { // 채팅 대상 목록 (360:153832) — 채팅 기능은 구현 전이라 "채팅방 입장"은 동작 없음
+        const sel = new Set(list.filter((t) => !only || t.key === only).map((t) => t.key));
+        const wrap = $("div", "");
+        const sh = { s: null };
+        function paintSheet() {
+          const allOn = list.every((t) => sel.has(t.key));
+          const all = R.Checkbox({ label: "전체선택", checked: allOn, onChange: (on) => { list.forEach((t) => (on ? sel.add(t.key) : sel.delete(t.key))); paintSheet(); } });
+          const head = $("div", "cp", [all]);
+          const rows = list.map((t) => { const b = $("button", "fd-row", [person(32), $("div", "fd-row__txt", [t.name, $("small", "", [t.role])]), R.Icon(sel.has(t.key) ? "glyph/check-circle-checked" : "glyph/check-circle-default", { size: 24 })], { type: "button" }); b.style.cssText = "width:100%;border:0;background:none;cursor:pointer;text-align:left"; b.addEventListener("click", () => { sel.has(t.key) ? sel.delete(t.key) : sel.add(t.key); paintSheet(); }); return b; });
+          wrap.replaceChildren(head, ...rows);
+        }
+        paintSheet();
+        const enter = R.Button({ label: "채팅방 입장", size: 56 }); enter.classList.add("btn-green");
+        sh.s = F.sheet({ title: "채팅 대상 목록", body: wrap, foot: enter });
+      }
+      function group(role, people) {
+        const open = !collapsed[role];
+        const head = $("div", "rg__head", [$("span", "rg__title", [`${role} (${people.length})`])]);
+        if (tab === 1) {
+          const bell = $("button", "rg__pill", [R.Icon("line/notification", { size: 16, color: "var(--rz-gray-06)" }), "전체 알림"], { type: "button" });
+          bell.addEventListener("click", confirmAll);
+          const chat = $("button", "rg__pill", [R.Icon("line/ic24_chat", { size: 16, color: "var(--rz-gray-06)" }), "채팅하기"], { type: "button" });
+          chat.addEventListener("click", () => chatSheet(people));
+          head.append(bell, chat);
+        }
+        const tog = $("button", "rg__tog", [R.Icon(open ? "line/ic24_arrow-up" : "line/ic24_arrow-down", { size: 16, color: "var(--rz-gray-07)" })], { type: "button", "aria-label": open ? "접기" : "펼치기", "aria-expanded": String(open) });
+        tog.addEventListener("click", () => { collapsed[role] = open; paint(); });
+        head.append(tog);
+        const g = $("div", "rg", [head]);
+        if (open) people.forEach((t) => {
+          const row = $("div", "fd-row", [person(32), $("div", "fd-row__txt", [t.name, $("small", "", [t.role])])]);
+          if (tab === 0) row.append($("span", "fd-row__time", [F.fmtDate(f.readers[t.key])]));
+          else {
+            const bell = $("button", "rg__ico", [R.Icon("line/notification", { size: 16, color: "var(--rz-gray-06)" })], { type: "button", "aria-label": "알림 발송" });
+            bell.addEventListener("click", () => toast("알림이 발송되었습니다."));
+            const chat = $("button", "rg__ico", [R.Icon("line/ic24_chat", { size: 16, color: "var(--rz-gray-06)" })], { type: "button", "aria-label": "채팅하기" });
+            chat.addEventListener("click", () => chatSheet(people, t.key));
+            row.append($("div", "rg__icos", [bell, chat]));
+          }
+          g.append(row);
+        });
+        return g;
+      }
+      function paint() {
+        const src = tab === 0 ? readList : unread;
+        const groups = ["학생", "보호자"].map((r) => [r, src.filter((t) => t.role === r)]).filter(([, p]) => p.length);
+        body.replaceChildren(...(groups.length ? groups.map(([r, p]) => group(r, p)) : [$("p", "fd-none", [tab === 0 ? "아직 읽은 사람이 없습니다." : "모두 읽었습니다."])]));
+      }
+      const ov = $("div", "rdr", [R.StatusBar(), header, tabs, body]);
+      screenEl().append(ov);
+      paint();
+    }
+
+    /* ---------- layout ---------- */
+    const klass = cur().klass;
+    const scroll = $("div", "scroll", [postBox, meta, list, composer]);
+    scroll.addEventListener("click", (e) => { if ((state.menu || state.reactMenu) && !e.target.closest(".cmenu, .rx__pick, .rx__add, .cm__head button")) { state.menu = null; state.reactMenu = false; paintAll(); } });
+    const header = R.FlowHeader({ title: "글 상세보기", subtitle: klass ? `${F.academy()}/${klass}` : F.academy(), lead: "close", onLead: () => go("./feed.html") });
+    document.getElementById("root").append(R.Device({ children: [$("div", "screen", [R.StatusBar(), header, scroll])] }));
+    paintPost(); paintAll(); paintComposer();
+  </script>
+</body>
+</html>

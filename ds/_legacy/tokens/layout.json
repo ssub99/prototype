@@ -1,0 +1,40 @@
+{
+  "$description": "Rallyz layout / spacing / radius — measured from Components chrome",
+  "size": {
+    "screen-width": { "value": 375, "unit": "px", "css": "--rz-size-screen-width" },
+    "screen-height": { "value": 812, "unit": "px", "css": "--rz-size-screen-height" },
+    "content-width": { "value": 343, "unit": "px", "css": "--rz-size-content-width" },
+    "inset": { "value": 16, "unit": "px", "css": "--rz-space-inset" },
+    "status-bar-height": { "value": 44, "unit": "px", "css": "--rz-size-status-bar" },
+    "header-height": { "value": 48, "unit": "px", "css": "--rz-size-header" },
+    "navagation-height": { "value": 48, "unit": "px", "css": "--rz-size-navagation" },
+    "nav-indicator-width": { "value": 38, "unit": "px", "css": "--rz-size-nav-indicator-width" },
+    "nav-indicator-height": { "value": 3, "unit": "px", "css": "--rz-size-nav-indicator-height" },
+    "device-width": { "value": 395, "unit": "px", "css": "--rz-size-device-width" },
+    "device-height": { "value": 832, "unit": "px", "css": "--rz-size-device-height" },
+    "device-bezel": { "value": 10, "unit": "px", "css": "--rz-size-device-bezel" }
+  },
+  "radius": {
+    "button": { "value": 8, "unit": "px", "css": "--rz-radius-button" },
+    "button-tiny": { "value": 16, "unit": "px", "css": "--rz-radius-button-tiny" },
+    "input": { "value": 10, "unit": "px", "css": "--rz-radius-input" },
+    "toast": { "value": 8, "unit": "px", "css": "--rz-radius-toast" },
+    "chip-regular": { "value": 16, "unit": "px", "css": "--rz-radius-chip-regular" },
+    "chip-small": { "value": 12, "unit": "px", "css": "--rz-radius-chip-small" },
+    "chip-tiny": { "value": 4, "unit": "px", "css": "--rz-radius-chip-tiny" },
+    "alarm": { "value": 8, "unit": "px", "css": "--rz-radius-alarm" },
+    "device": { "value": 40, "unit": "px", "css": "--rz-radius-device" },
+    "screen": { "value": 32, "unit": "px", "css": "--rz-radius-screen" }
+  },
+  "space": {
+    "0": { "value": 0, "unit": "px", "css": "--rz-space-0" },
+    "2": { "value": 2, "unit": "px", "css": "--rz-space-2" },
+    "4": { "value": 4, "unit": "px", "css": "--rz-space-4" },
+    "8": { "value": 8, "unit": "px", "css": "--rz-space-8" },
+    "12": { "value": 12, "unit": "px", "css": "--rz-space-12" },
+    "16": { "value": 16, "unit": "px", "css": "--rz-space-16" },
+    "20": { "value": 20, "unit": "px", "css": "--rz-space-20" },
+    "24": { "value": 24, "unit": "px", "css": "--rz-space-24" },
+    "32": { "value": 32, "unit": "px", "css": "--rz-space-32" }
+  }
+}

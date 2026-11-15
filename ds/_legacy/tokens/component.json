@@ -1,0 +1,87 @@
+{
+  "$description": "Rallyz component tokens — reference foundation/typography; do not hardcode hex in CSS",
+  "button": {
+    "fullWidth": { "ref": "layout.size.content-width" },
+    "radius": { "ref": "layout.radius.button" },
+    "heights": {
+      "64_large": { "value": 64, "unit": "px", "label": "body02.bold", "css": "--rz-button-height-64" },
+      "56_regular": { "value": 56, "unit": "px", "label": "body02.bold", "css": "--rz-button-height-56" },
+      "48_small": { "value": 48, "unit": "px", "label": "body02.regular", "css": "--rz-button-height-48" },
+      "40_xsmall": { "value": 40, "unit": "px", "label": "small01.regular", "css": "--rz-button-height-40" },
+      "32_xxsmall": { "value": 32, "unit": "px", "label": "small01.regular", "css": "--rz-button-height-32" },
+      "32_tiny": { "value": 32, "unit": "px", "label": "body02.bold", "radius": "button-tiny", "paddingX": 12, "css": "--rz-button-height-32-tiny" },
+      "24_tiny": { "value": 24, "unit": "px", "label": "small01.bold", "css": "--rz-button-height-24-tiny" },
+      "16_tiny": { "value": 16, "unit": "px", "label": "button02.bold", "css": "--rz-button-height-16-tiny" }
+    },
+    "fill": {
+      "solid.Green": { "bg": "color.primary", "fg": "semantic.on-primary" },
+      "solid.Grey": { "bg": "color.gray-03", "fg": "color.ink" },
+      "solid.Red": { "bg": "color.danger", "fg": "semantic.on-primary" },
+      "line.Green": { "bg": "color.white", "fg": "color.primary", "stroke": "color.primary" },
+      "line.Grey": { "bg": "color.white", "fg": "color.gray-06", "stroke": "color.gray-03" }
+    }
+  },
+  "chip": {
+    "regular": { "height": 32, "radius": "chip-regular", "label": "body02.regular" },
+    "small": { "height": 24, "radius": "chip-small", "label": "small01.regular", "solidBg": "semantic.chip-soft", "solidFg": "color.primary" },
+    "tiny": { "height": 18, "radius": "chip-tiny", "label": "small01.medium", "paddingX": 4 }
+  },
+  "input": {
+    "width": { "ref": "layout.size.content-width" },
+    "radius": { "ref": "layout.radius.input" },
+    "label": "body02.medium",
+    "heights": {
+      "48_large": 48,
+      "40_regular": 40,
+      "32_small": 32
+    },
+    "stroke": {
+      "default": "color.gray-03",
+      "active": "color.primary",
+      "error": "color.danger"
+    }
+  },
+  "toast": {
+    "width": { "ref": "layout.size.content-width" },
+    "height": 48,
+    "radius": { "ref": "layout.radius.toast" },
+    "bg": "semantic.toast",
+    "fg": "color.white",
+    "label": "body02.medium"
+  },
+  "control": {
+    "checkSize": 16,
+    "radioSize": 16,
+    "toggleWidth": 36,
+    "toggleHeight": 20,
+    "active": "color.primary"
+  },
+  "alarm": {
+    "width": { "ref": "layout.size.content-width" },
+    "radius": { "ref": "layout.radius.alarm" },
+    "icon": 40,
+    "copyWidth": 231,
+    "copy": "small01.regular",
+    "copyColor": "color.gray-06",
+    "chevronColor": "color.gray-04",
+    "divider": "color.gray-02",
+    "footer": "small01.light"
+  },
+  "header": {
+    "height": { "ref": "layout.size.header-height" },
+    "homeBg": "color.white",
+    "flowBg": "semantic.header-band",
+    "title": "body02.regular"
+  },
+  "navagation": {
+    "height": { "ref": "layout.size.navagation-height" },
+    "indicatorColor": "color.primary",
+    "inactive": "color.gray-05",
+    "active": "color.ink"
+  },
+  "statusBar": {
+    "height": { "ref": "layout.size.status-bar-height" },
+    "bg": "color.white",
+    "time": "status.time"
+  }
+}

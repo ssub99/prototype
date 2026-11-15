@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz — 피드 글쓰기</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <link rel="stylesheet" href="../common/feed.css?v=2" />
+  <!--
+    Figma: [7.1.1.2.0.0.0]피드_글쓰기_태그 입력 (360:152996). 글만 작성한다 — 갤러리·파일 업로드와 조회 대상 선택(360:153328 · 360:153381)은 구현하지 않아 하단 바는 동작 없음(요청).
+    ?class=<클래스명> (없으면 첫 클래스)에 올린다. 완료 → 피드 저장 후 전체 피드. 단축태그(# 과제 · # 공지)를 누르면 태그로 추가된다.
+    클래스가 없으면 클래스 논페이지(NonePage.gate needs ["class"], from=feed-write)를 보여 준다. 클래스 만들기 완료 후 이동: 개선 후 = 이 화면으로 복귀, 개선 전 = 클래스 관리(class-new).
+    Shared by before/ and after/ — keep both copies identical (title only differs).
+  -->
+  <style>
+    .none { padding-top: 96px; }
+    .wr { padding: 16px 16px 24px; }
+    .wr__text { display: block; width: 100%; height: 200px; box-sizing: border-box; padding: 16px; border: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--rz-gray-03); resize: none; outline: none; font: var(--rz-type-body02-regular); color: var(--rz-black); line-height: 21px; background: var(--rz-white); }
+    .wr__text::placeholder { color: var(--rz-gray-04); }
+    .wr__text:focus { box-shadow: inset 0 0 0 1px var(--rz-primary); }
+    .wr__quick { margin-top: 16px; display: flex; gap: 8px; }
+    .wr__chip { height: 32px; padding: 0 12px; border: 0; border-radius: 16px; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-blue-03); color: var(--rz-blue-03); font: 700 12px/18px var(--rz-font-sans); cursor: pointer; }
+    .wr__tag { margin-top: 8px; height: 48px; box-sizing: border-box; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--rz-gray-03); display: flex; align-items: center; gap: 8px; padding: 0 8px 0 12px; background: var(--rz-white); }
+    .wr__tag:focus-within { box-shadow: inset 0 0 0 1px var(--rz-primary); }
+    .wr__tag b { font: 700 24px/24px var(--rz-font-sans); color: var(--rz-primary); }
+    .wr__tag input { flex: 1; min-width: 0; border: 0; outline: none; background: none; font: var(--rz-type-body02-regular); color: var(--rz-black); }
+    .wr__tag input::placeholder { color: var(--rz-gray-04); }
+    .wr__tag .rz-btn { flex: none; width: 60px; }
+    .wr__added { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .wr__added span { height: 32px; padding: 0 8px 0 12px; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--rz-primary); color: var(--rz-primary); font: 700 12px/18px var(--rz-font-sans); display: inline-flex; align-items: center; gap: 4px; }
+    .wr__added button { border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
+    .wr__bar { flex: none; height: 56px; border-top: 1px solid var(--rz-gray-02); background: var(--rz-gray-01); display: flex; justify-content: space-around; align-items: center; }
+    .wr__bar span { display: inline-flex; align-items: center; gap: 6px; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script src="../common/none-page.js?v=3"></script>
+  <script src="../common/feed.js?v=2"></script>
+  <script>
+    const R = Rallyz, F = Feed;
+    const { $, go } = Onb;
+    const data = RzData.get();
+    if (!data.academy) location.replace("./index.html");
+    const klass = new URLSearchParams(location.search).get("class") || data.classes[0]?.name || "";
+    const st = { text: "", tags: [] };
+
+    // 클래스가 없으면 글쓰기 대신 클래스 논페이지 — 개선 전/후 유형(개선 전은 버튼 아래 텍스트 버튼 없음)은 NonePage 가 버전에 맞춰 그린다.
+    const gated = NonePage.gate({ needs: ["class"], from: "feed-write" });
+    const header = R.FlowHeader({ title: "글쓰기", subtitle: klass ? `${F.academy()}/${klass}` : F.academy(), lead: "close", ...(gated ? {} : { buttonLabel: "완료", buttonColor: "grey" }), onLead: () => go("./feed.html"),
+      onTrail: () => { if (!st.text.trim()) return; F.add({ klass, content: st.text.trim(), tags: st.tags }); go("./feed.html"); } });
+    const doneBtn = header.querySelector(".rz-btn") || document.createElement("button");
+    const paintDone = () => { const on = !!st.text.trim(); doneBtn.classList.toggle("rz-btn--green", on); doneBtn.classList.toggle("rz-btn--grey", !on); doneBtn.setAttribute("aria-disabled", String(!on)); };
+
+    const text = $("textarea", "wr__text", [], { placeholder: "새로운 소식과 다양한 자료를 학생들과 공유해 보세요.", "aria-label": "피드 내용" });
+    text.addEventListener("input", () => { st.text = text.value; paintDone(); });
+
+    /* 태그: 단축태그 + 직접 입력 */
+    const added = $("div", "wr__added");
+    function addTag(raw) {
+      const t = String(raw).replace(/^#+/, "").trim().slice(0, 20);
+      if (!t || st.tags.includes(t)) return false;
+      st.tags.push(t); paintTags(); return true;
+    }
+    function paintTags() {
+      added.replaceChildren(...st.tags.map((t) => {
+        const x = $("button", "", [R.Icon("glyph/chip-close", { size: 14 })], { type: "button", "aria-label": `${t} 삭제` });
+        x.addEventListener("click", () => { st.tags = st.tags.filter((y) => y !== t); paintTags(); });
+        return $("span", "", [`# ${t}`, x]);
+      }));
+    }
+    const quick = $("div", "wr__quick", ["과제", "공지"].map((t) => { const b = $("button", "wr__chip", [`# ${t}`], { type: "button" }); b.addEventListener("click", () => addTag(t)); return b; }));
+    const tagIn = $("input", "", [], { type: "text", placeholder: "태그 입력", maxlength: "20", "aria-label": "태그 입력" });
+    const commit = () => { const t = tagIn.value.replace(/^#+/, "").trim(); if (t) { addTag(t); tagIn.value = ""; } tagIn.focus(); }; // 중복·빈 값은 무시
+    tagIn.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); commit(); } });
+    const tagBox = $("label", "wr__tag", [$("b", "", ["#"]), tagIn, R.Button({ label: "입력", size: "t32", variant: "line", color: "green", onClick: commit })]);
+
+    const bar = $("div", "wr__bar", [["line/ic24_imageupload", "갤러리 업로드"], ["line/ic24_fileupload", "파일 업로드"], ["line/ic24_student-add", "조회 대상 선택"]].map(([ic, l]) => $("span", "", [R.Icon(ic, { size: 24, color: "var(--rz-gray-06)" }), l]))); // 구현하지 않는 기능(동작 없음)
+    const scroll = $("div", "scroll", gated ? [gated] : [$("div", "wr", [text, quick, tagBox, added])]);
+    document.getElementById("root").append(R.Device({ children: [$("div", "screen", [R.StatusBar(), header, scroll, ...(gated ? [] : [bar])])] }));
+    paintDone();
+  </script>
+</body>
+</html>

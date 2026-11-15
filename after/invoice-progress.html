@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz — 청구서 생성 작업중</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [6.2.2.1.0.0.0]청구 작업중일 경우 접근 차단_선택항목 선택 (360:158456)
+    "최대 1분" 작업을 흉내 내어 2초 뒤 자동 이동: 실패가 없으면 invoice-done.html, 실패가 있으면 청구서 생성 목록 + 생성결과 시트.
+    학원관리 바로가기 → academy-manage. Shared by before/ and after/ — keep both copies identical (title only differs).
+  -->
+  <style>
+    .wait { flex: 1; text-align: center; padding: 214px 16px 0; }
+    .spin { width: 56px; height: 56px; margin: 0 auto; animation: spin 1s steps(8) infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .wait h1 { margin: 24px 0 0; font: var(--rz-type-headline-bold); color: var(--rz-black); }
+    .wait p { margin: 16px 0 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); white-space: pre-line; }
+    .wait button { margin-top: 32px; border: 0; background: none; padding: 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script>
+    const R = Rallyz;
+    const { $, go, store } = Onb;
+    if (!RzData.get().academy) location.replace("./index.html");
+    let r = null; try { r = JSON.parse(store.get("invResult") || "null"); } catch { /* */ }
+    if (!r) location.replace("./invoice-create.html");
+
+    // 8 rounded spokes fading clockwise (green)
+    const NS = "http://www.w3.org/2000/svg";
+    const spin = document.createElementNS(NS, "svg");
+    spin.setAttribute("viewBox", "0 0 56 56"); spin.setAttribute("class", "spin"); spin.setAttribute("aria-hidden", "true");
+    for (let i = 0; i < 8; i++) {
+      const l = document.createElementNS(NS, "line");
+      Object.entries({ x1: 28, y1: 5, x2: 28, y2: 15, stroke: "#33CC33", "stroke-width": 5, "stroke-linecap": "round", opacity: 0.2 + (0.8 * i) / 7, transform: `rotate(${i * 45} 28 28)` }).forEach(([k, v]) => l.setAttribute(k, v));
+      spin.append(l);
+    }
+    const link = $("button", "", ["학원관리 바로가기"], { type: "button" });
+    link.addEventListener("click", () => { clearTimeout(timer); go("./academy-manage.html"); });
+    const wait = $("div", "wait", [spin, $("h1", "", ["청구서 생성 작업중입니다."]), $("p", "", ["최대 1분 소요될 수 있습니다.\n완료되면 자동으로 이동합니다.\n\n청구 작업중에도 기다리지 않고\n다른 업무를 수행하실 수 있습니다."]), link]);
+    const timer = setTimeout(() => go(r.failClasses.length ? "./invoice-create.html?result=1" : "./invoice-done.html"), 2000);
+    document.getElementById("root").append(R.Device({ children: [$("div", "screen", [R.StatusBar(), wait])] }));
+  </script>
+</body>
+</html>

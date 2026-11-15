@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz — 학생 등록 3/3</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [5.3.3.0.0.0.0]온보딩_학생 등록 — 개별 (286:36303) · 일괄 (286:36351) · 일괄+파일 (286:36378)
+           …_팝업창_온보딩페이지 (286:36409)
+  -->
+  <style>
+    .tab-body { padding: 16px 16px 16px; }
+    .tab-body > .field:first-of-type { margin-top: 24px; }
+    .field--name { margin-top: 39px !important; }
+    .radios { display: grid; grid-template-columns: 172px 1fr; }
+    .field__label em { font: 700 10px/15px var(--rz-font-sans); } /* Figma uses Small02/Bold here */
+    .grade { display: grid; grid-template-columns: 121px 1fr; gap: 8px; }
+    .date-wrap { position: relative; }
+    .date-wrap .rz-calendar { position: absolute; top: 56px; left: 0; z-index: 10; }
+
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script>
+    const R = Rallyz;
+    const { $, field, shell, footer, alert, store, go } = Onb;
+
+    const classNames = RzData.classNames();
+    const className = classNames[classNames.length - 1] || store.get("className", "랠리즈 으뜸 수학");
+    const today = new Date();
+    const fmtDate = (y, m, d) => `${y}.${m}.${d}`;
+    const st = {
+      klass: "", name: "", phone: "", sameAsGuardian: false, guardian: "",
+      joined: fmtDate(today.getFullYear(), today.getMonth() + 1, today.getDate()),
+      payDay: "", gender: null, school: "", gradeGroup: "", grade: "", file: null,
+    };
+
+    /* ================= 개별 등록 ================= */
+    const individual = $("div", "tab-body");
+    const classField = field("클래스", { required: true }, R.Select({ placeholder: "클래스 선택", size: 48, options: classNames.length ? classNames : [className], onChange: (v) => (st.klass = v) }));
+
+    const nameField = field("학생 이름", {
+      required: true,
+      trail: R.Button({ label: "연락처 가져오기", size: "t24", variant: "line", color: "grey" }), // funnel not built → no action
+    }, R.Input({ placeholder: "학생 이름 입력", name: "studentName", onInput: (v) => (st.name = v.trim()) }));
+    nameField.classList.add("field--name");
+
+    const phoneInput = R.Input({ placeholder: "학생 휴대폰 번호 입력", name: "studentPhone", type: "tel", onInput: (v) => (st.phone = v.trim()) });
+    const guardianInput = R.Input({ placeholder: "보호자 휴대폰 번호 입력", name: "guardianPhone", type: "tel", onInput: (v) => {
+      st.guardian = v.trim();
+      if (st.sameAsGuardian) { phoneInput.querySelector("input").value = v; st.phone = st.guardian; }
+    } });
+    const same = R.Checkbox({ label: "보호자 연락처와 동일", onChange: (on) => {
+      st.sameAsGuardian = on;
+      const inp = phoneInput.querySelector("input");
+      inp.disabled = on; phoneInput.classList.toggle("is-disabled", on);
+      if (on) { inp.value = st.guardian; st.phone = st.guardian; }
+    } });
+    const phoneField = field("학생 휴대폰 번호", { required: true, trail: same }, [phoneInput, $("p", "field__hint", ["휴대폰이 없는 경우 보호자 휴대폰번호를 입력해주세요."])]);
+    const guardianField = field("보호자 휴대폰 번호", {}, guardianInput);
+
+    const dateWrap = $("div", "date-wrap");
+    const renderDate = () => {
+      const btn = R.DateField({ kind: "date", width: "full", value: st.joined, onClick: () => {
+        if (dateWrap.querySelector(".rz-calendar")) { dateWrap.querySelector(".rz-calendar").remove(); return; }
+        const [y, m, d] = st.joined.split(".").map(Number);
+        dateWrap.append(R.Calendar({ year: y, month: m, selected: d, onSelect: ({ year, month, day }) => { st.joined = fmtDate(year, month, day); renderDate(); } }));
+      } });
+      dateWrap.replaceChildren(btn);
+    };
+    renderDate();
+    const dateField = field("학원 입학일", { required: true }, dateWrap);
+
+    const payDays = [...Array.from({ length: 31 }, (_, i) => `${i + 1}일`), "말일"];
+    const payField = field("수강료 납부일", { required: true }, R.Select({ placeholder: "납부일 선택", size: 48, options: payDays, onChange: (v) => (st.payDay = v) }));
+
+    const genderField = field("성별", { required: true }, $("div", "radios", ["남자", "여자"].map((g) => R.Radio({ label: g, name: "gender", value: g, onChange: (v) => (st.gender = v) }))));
+    const schoolField = field("학교", {}, R.Input({ placeholder: "학교 입력", name: "school", onInput: (v) => (st.school = v.trim()) }));
+
+    const GRADES = { "초등": 6, "중등": 3, "고등": 3, "기타": 0 };
+    const gradeRow = $("div", "grade");
+    const renderGrade = () => {
+      const n = GRADES[st.gradeGroup] || 0;
+      gradeRow.replaceChildren(
+        R.Select({ value: st.gradeGroup, placeholder: "구분", size: 48, options: Object.keys(GRADES), onChange: (v) => { st.gradeGroup = v; st.grade = ""; renderGrade(); } }),
+        R.Select({ value: st.grade, placeholder: "선택", size: 48, disabled: !n, options: Array.from({ length: n }, (_, i) => `${i + 1}학년`), onChange: (v) => (st.grade = v) }),
+      );
+    };
+    renderGrade();
+    const gradeField = field("학년", {}, gradeRow);
+
+    individual.append(
+      classField, nameField, phoneField, guardianField, dateField, payField, genderField, schoolField, gradeField,
+    );
+
+    /* ================= submit ================= */
+    const rules = [
+      [() => st.klass, "클래스를 선택하세요.", classField],
+      [() => st.name, "학생 이름을 입력하세요.", nameField],
+      [() => st.phone, "학생 휴대폰 번호를 입력하세요.", phoneField],
+      [() => st.joined, "학원 입학일을 선택하세요.", dateField],
+      [() => st.payDay, "수강료 납부일을 선택하세요.", payField],
+      [() => st.gender, "성별을 선택하세요.", genderField],
+    ];
+    function confirmRegister() {
+      alert(individual, { message: "대상을 학생으로 등록하시겠어요 ?", cancelLabel: "아니오", confirmLabel: "예", onConfirm: () => {
+        RzData.addStudent({ name: st.name, phone: st.phone, guardian: st.guardian, klass: st.klass, tuition: 0 });
+        go("./student-done.html");
+      } });
+    }
+    function submitIndividual() {
+      const miss = rules.find(([ok]) => !ok());
+      if (miss) { alert(individual, { message: miss[1], onConfirm: () => miss[2].scrollIntoView({ block: "center", behavior: "smooth" }) }); return; }
+      confirmRegister();
+    }
+
+    /* ================= shell ================= */
+    const indFooter = footer({ label: "완료", onClick: submitIndividual, later: () => go("./home.html") });
+    const ui = shell({ title: "학생 등록", step: "3/3", body: [individual], footer: indFooter });
+
+    const demo = new URLSearchParams(location.search).get("state");
+    if (demo === "confirm") confirmRegister();
+  </script>
+</body>
+</html>

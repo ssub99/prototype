@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — 홈</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [2.0.0.0.0.0.0]홈 (296:127266) · 006.03. 홈화면_피드없음 (296:131851) · 006.04. …_모달뷰 (296:131678)
+    — 학원장 home after onboarding.
+    Content comes from RzData (what was entered during onboarding), not from the design's placeholder data.
+    Shared by before/ and after/ — keep both copies identical.
+  -->
+  <style>
+    .sec { padding: 0 16px; }
+    .sec--alarm { background: var(--rz-gray-01); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .sec--banner { background: var(--rz-gray-02); padding: 16px 16px 16px; }
+    .sec--main { background: var(--rz-gray-01); padding: 32px 16px 16px; }
+    .sec--feed { background: var(--rz-gray-01); padding: 32px 16px; border-top: 6px solid var(--rz-gray-02); }
+    .feed-item { margin-top: 12px; border-radius: 16px; background: var(--rz-white); padding: 16px; cursor: pointer; }
+    .feed-item b { font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .feed-item span { margin-left: 8px; font: var(--rz-type-small01-regular); color: var(--rz-gray-05); }
+    .feed-item p { margin: 8px 0 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; }
+    .sec--feed > .rz-btn { margin-top: 12px; width: 100%; }
+    .feed-empty { margin-top: 16px; height: 230px; border-radius: 16px; background: var(--rz-white); display: flex; flex-direction: column; align-items: center; padding-top: 40px; }
+    .feed-empty img { width: 110px; height: 60px; }
+    .feed-empty p { margin: 16px 0 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); }
+    .feed-empty .rz-btn { width: 114px; margin-top: 16px; }
+    .sec--more { background: var(--rz-gray-02); padding: 32px 16px 96px; }
+    .h2 { margin: 0; font: var(--rz-type-headline-bold); }
+    .h3 { margin: 16px 0 0; font: var(--rz-type-body01-bold); color: var(--rz-gray-04); }
+    .stack { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+    .alarms { display: flex; flex-direction: column; gap: 8px; }
+
+    .banner { position: relative; height: 96px; border-radius: 10px; background: #B8D9FF; padding: 24px 16px 0; overflow: hidden; }
+    .banner small { display: block; font: var(--rz-type-small01-medium); color: #4757ED; }
+    .banner strong { display: block; font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .banner img { position: absolute; right: 16px; top: 8px; width: 92px; height: 88px; }
+    .dots { display: flex; justify-content: center; gap: 4px; margin-top: 8px; }
+    .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--rz-gray-04); }
+    .dots i.on { background: var(--rz-gray-06); }
+
+
+    .more { display: grid; grid-template-columns: 168px 167px; gap: 8px; }
+    .more__card { height: 164px; padding: 16px; border-radius: 16px; background: var(--rz-white); display: flex; flex-direction: column; }
+    .more__card small { margin-top: 16px; font: 300 12px/18px var(--rz-font-sans); color: var(--rz-black); }
+    .more__card strong { font: var(--rz-type-body01-bold); }
+    .fab { position: absolute; right: 16px; bottom: 32px; z-index: 20; width: 56px; height: 56px; border: 0; padding: 0; border-radius: 50%; background: var(--rz-primary); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16); display: grid; place-items: center; }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script>
+    const R = Rallyz;
+    const { $, go } = Onb;
+    const data = RzData.get();
+    if (!data.academy) location.replace("./index.html"); // no academy yet → 무소속 home
+
+    const academy = data.academy?.name || "";
+    const WEEK = ["월", "화", "수", "목", "금", "토", "일"];
+    const daysOf = (c) => {
+      const set = new Set(c.schedules.flatMap((s) => s.days.split(",").map((d) => d.trim())));
+      const list = WEEK.filter((d) => set.has(d));
+      return list.length ? list.join("/") : "-";
+    };
+    const won = (n) => `₩${Math.round(n).toLocaleString("ko-KR")}`;
+    /* thumbnails: 5 images (Figma class_1~5) assigned at random once, then kept in RzData */
+    const THUMBS = [1, 2, 3, 4, 5].map((n) => `../assets/thumbs/class_${n}.jpg`);
+    RzData.update((d) => {
+      const used = new Set([d.academy, ...d.classes].map((x) => x?.thumb).filter(Boolean));
+      const pick = () => {
+        const free = THUMBS.filter((t) => !used.has(t));
+        const pool = free.length ? free : THUMBS;
+        const t = pool[Math.floor(Math.random() * pool.length)];
+        used.add(t);
+        return t;
+      };
+      if (d.academy && !d.academy.thumb) d.academy.thumb = pick();
+      d.classes.forEach((c) => { if (!c.thumb) c.thumb = pick(); });
+    });
+    Object.assign(data, RzData.get());
+
+    /* ---------- 알림: built from what onboarding left undone ---------- */
+    const alarms = [];
+    if (!data.classes.length) {
+      alarms.push(R.Alarm({ title: academy, message: "학원에 등록된 클래스가 없습니다.\n클래스 등록 후 이용해주세요!", icon: "flat/ic40_offlineclass", onOpen: () => go("./class-new.html?from=home") }));
+    } else if (!data.students.length && !data.bulk.length) {
+      alarms.push(R.Alarm({ title: academy, message: "학원에 등록된 학생이 없습니다.\n학생 등록 후 이용해주세요!", icon: "flat/ic40_offlineclass", onOpen: () => go("./student-register.html") }));
+    }
+    const alarmSec = $("section", "sec--alarm", [$("div", "alarms", alarms)]);
+    if (alarms.length > 1) {
+      alarms.slice(1).forEach((a) => (a.hidden = true));
+      alarmSec.append(R.AccordionButton({ open: false, onToggle: (open) => alarms.slice(1).forEach((a) => (a.hidden = !open)) }));
+    }
+
+    /* ---------- 배너 (static; carousel slides not designed) ---------- */
+    const banner = $("section", "sec--banner");
+    banner.innerHTML = `
+      <div class="banner"><small>스마트하게 학원 운영하는 방법!</small><strong>랠리즈 사용 교육을 신청해 보세요.</strong>
+        <img src="../assets/onboarding/home-banner.svg" alt="" /></div>
+      <div class="dots" aria-hidden="true"><i></i><i></i><i class="on"></i></div>`;
+
+    /* ---------- My 학원 ---------- */
+    const studentCount = data.students.length;
+    const unpaid = data.students.reduce((sum, s) => sum + (s.tuition || 0), 0);
+    const academyCard = R.InstituteCard({
+      variant: "manage", title: academy, thumb: data.academy?.thumb || THUMBS[0],
+      stats: [["현재 학생수", `${studentCount}명`], ["신규 문의", "0건"], ["미수납", won(unpaid)]],
+      onClick: () => go("./academy-main.html"),            // 카드 → MY 학원 (6.0)
+      onAction: (i) => { if (i === 0) go("./academy-manage.html?from=home"); }, // 학원관리 → 6.2 · 학원현황 not built
+    });
+    const main = $("section", "sec--main", [$("h2", "h2", ["My 학원"]), $("h3", "h3", ["관리중인 학원"]), $("div", "stack", [academyCard])]);
+    // 강의중인 학원: onboarding never creates one → section omitted
+
+    /* ---------- My 클래스 ---------- */
+    // My 클래스 only exists once a class was made in onboarding
+    if (data.classes.length) {
+      const classList = $("div", "stack", data.classes.map((c) => R.ClassCard({ variant: "main01", org: academy, title: c.name, days: daysOf(c), thumb: c.thumb, daysIcon: "info", onDays: () => scheduleInfo(c) })));
+      main.append($("h2", "h2", ["My 클래스"], { style: "margin-top:32px" }), classList);
+    }
+
+    /* ---------- 수업일시 정보 modal (006.04): one line per schedule added in onboarding ---------- */
+    function scheduleInfo(c) {
+      const lines = c.schedules.map((sc) => `${sc.days.split(",").map((d) => d.trim()).join("/")} - ${sc.time}`);
+      R.showAlert(device.querySelector(".rz-device__screen"), { title: "수업일시 정보", message: lines.join("\n") || "등록된 수업 일정이 없습니다." });
+    }
+
+    /* ---------- 오늘의 피드 — 오늘 올린 피드가 없으면 empty state (006.03), 있으면 최근 글 최대 3개를 카드로 ---------- */
+    const todayFeeds = (RzData.get().feeds || []).filter((f) => new Date(f.at).toDateString() === new Date().toDateString()).sort((a, b) => b.at - a.at).slice(0, 3);
+    const feedCards = todayFeeds.map((f) => {
+      const c = $("article", "feed-item", [$("b", "", [f.author.name]), $("span", "", [new Date(f.at).toTimeString().slice(0, 5)]), $("p", "", [f.content])], { role: "link", tabindex: "0" });
+      c.addEventListener("click", () => go(`./feed-detail.html?id=${f.id}`));
+      return c;
+    });
+    const feed = $("section", "sec--feed", [$("h2", "h2", ["오늘의 피드"]), ...(feedCards.length ? [...feedCards, R.Button({ label: "전체 피드 보기", size: 40, variant: "line", color: "grey", onClick: () => go("./feed.html") })] : [$("div", "feed-empty", [
+      $("img", "", [], { src: "../assets/onboarding/feed-empty.svg", alt: "" }),
+      $("p", "", ["오늘 등록된 피드가 없습니다."]),
+      R.Button({ label: "전체 피드 보기", size: 40, onClick: () => go("./feed.html") }),
+    ])])]);
+
+    /* ---------- 학원만들기 / 학원검색 (funnels not built → no action) ---------- */
+    const card = (icon, desc, title) => $("div", "more__card", [R.Icon(icon, { size: 64 }), $("small", "", [desc]), $("strong", "", [title])]);
+    const more = $("section", "sec--more", [$("div", "more", [card("flat/ic64_create", "학원을 운영하고 있다면", "학원만들기"), card("flat/ic64_search", "다양한 학원을 만나려면", "학원검색")])]);
+
+    /* ---------- mount: status bar, header and tab bar stay fixed ---------- */
+    const scroll = $("div", "scroll", [alarms.length ? alarmSec : null, banner, main, feed, more]);
+    const nav = R.Navagation({ active: "home", interactive: false });
+    nav.children[1].addEventListener("click", () => go("./feed.html")); // 피드 탭
+    const screen = $("div", "screen", [R.StatusBar(), R.Header({ kind: "home" }), nav, scroll]);
+    const fab = $("button", "fab", [R.Icon("solid/ic56_floating", { size: 56 })], { type: "button", "aria-label": "메뉴" });
+    const device = R.Device({ children: [screen] });
+    device.querySelector(".rz-device__screen").append(fab);
+    document.getElementById("root").append(device);
+  </script>
+</body>
+</html>

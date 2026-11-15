@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz — 학생 명단</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [7.1.1.4.1.0.0]학습관리_학생명단_학생이 없을 때 (320:138183) + 생성 유도 컨텐츠01~04 (shared guide, common/none-page.js)
+    Opened from 클래스 관리 › ⋮ › 학생관리 (?class=<name>). Only the "학생 없음" state is designed.
+    Shared by before/ and after/ — keep both copies identical.
+  -->
+  <style>
+    .search-band { flex: none; padding: 8px 16px; background: var(--rz-gray-01); }
+    .none { padding-top: 96px; }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script src="../common/none-page.js?v=3"></script>
+  <script>
+    const R = Rallyz;
+    const { $, go } = Onb;
+    if (!RzData.get().academy) location.replace("./index.html");
+    const klass = new URLSearchParams(location.search).get("class") || "";
+    const screen = $("div", "screen", [
+      R.StatusBar(),
+      R.FlowHeader({ title: "학생 명단", subtitle: klass, lead: "close", onLead: () => go("./class-manage.html") }),
+      $("div", "search-band", [R.Search({ placeholder: "학생 이름 검색" })]),
+      $("div", "scroll", [NonePage.render({ kind: "student", from: "student-list" })]),
+    ]);
+    document.getElementById("root").append(R.Device({ children: [screen] }));
+  </script>
+</body>
+</html>

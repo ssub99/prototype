@@ -1,0 +1,181 @@
+{
+  "$description": "Rallyz typography — Pretendard text styles from Fluid catalogs/rallyz/base.json",
+  "family": "Pretendard",
+  "letterSpacing": 0,
+  "styles": {
+    "headline.bold": {
+      "textStyleName": "Headline/Bold",
+      "fontStyle": "Bold",
+      "fontWeight": 700,
+      "fontSize": 20,
+      "lineHeight": 30,
+      "css": "--rz-type-headline-bold"
+    },
+    "headline.medium": {
+      "textStyleName": "Headline/Medium",
+      "fontStyle": "Medium",
+      "fontWeight": 500,
+      "fontSize": 20,
+      "lineHeight": 30,
+      "css": "--rz-type-headline-medium"
+    },
+    "headline.regular": {
+      "textStyleName": "Headline/Regular",
+      "fontStyle": "Regular",
+      "fontWeight": 400,
+      "fontSize": 20,
+      "lineHeight": 30,
+      "css": "--rz-type-headline-regular"
+    },
+    "body01.bold": {
+      "textStyleName": "Body01/Bold",
+      "fontStyle": "Bold",
+      "fontWeight": 700,
+      "fontSize": 16,
+      "lineHeight": 24,
+      "css": "--rz-type-body01-bold"
+    },
+    "body01.medium": {
+      "textStyleName": "Body01/Medium",
+      "fontStyle": "Medium",
+      "fontWeight": 500,
+      "fontSize": 16,
+      "lineHeight": 24,
+      "css": "--rz-type-body01-medium"
+    },
+    "body01.regular": {
+      "textStyleName": "Body01/Regular",
+      "fontStyle": "Regular",
+      "fontWeight": 400,
+      "fontSize": 16,
+      "lineHeight": 24,
+      "css": "--rz-type-body01-regular"
+    },
+    "body02.bold": {
+      "textStyleName": "Body02/Bold",
+      "fontStyle": "Bold",
+      "fontWeight": 700,
+      "fontSize": 14,
+      "lineHeight": 21,
+      "css": "--rz-type-body02-bold"
+    },
+    "body02.medium": {
+      "textStyleName": "Body02/Medium",
+      "fontStyle": "Medium",
+      "fontWeight": 500,
+      "fontSize": 14,
+      "lineHeight": 21,
+      "css": "--rz-type-body02-medium"
+    },
+    "body02.regular": {
+      "textStyleName": "Body02/Regular",
+      "fontStyle": "Regular",
+      "fontWeight": 400,
+      "fontSize": 14,
+      "lineHeight": 21,
+      "css": "--rz-type-body02-regular"
+    },
+    "small01.bold": {
+      "textStyleName": "Small01/Bold",
+      "fontStyle": "Bold",
+      "fontWeight": 700,
+      "fontSize": 12,
+      "lineHeight": 18,
+      "css": "--rz-type-small01-bold"
+    },
+    "small01.medium": {
+      "textStyleName": "Small01/Medium",
+      "fontStyle": "Medium",
+      "fontWeight": 500,
+      "fontSize": 12,
+      "lineHeight": 18,
+      "css": "--rz-type-small01-medium"
+    },
+    "small01.regular": {
+      "textStyleName": "Small01/Regular",
+      "fontStyle": "Regular",
+      "fontWeight": 400,
+      "fontSize": 12,
+      "lineHeight": 18,
+      "css": "--rz-type-small01-regular"
+    },
+    "small01.light": {
+      "textStyleName": "Small01/Light",
+      "fontStyle": "Light",
+      "fontWeight": 300,
+      "fontSize": 12,
+      "lineHeight": 18,
+      "css": "--rz-type-small01-light",
+      "note": "Used on alarm checkbox / close. Measured on screen masters."
+    },
+    "button01.bold": {
+      "textStyleName": "Button01/Bold",
+      "fontStyle": "Bold",
+      "fontWeight": 700,
+      "fontSize": 14,
+      "lineHeight": 21,
+      "css": "--rz-type-button01-bold"
+    },
+    "button01.medium": {
+      "textStyleName": "Button01/Medium",
+      "fontStyle": "Medium",
+      "fontWeight": 500,
+      "fontSize": 14,
+      "lineHeight": 21,
+      "css": "--rz-type-button01-medium"
+    },
+    "button01.regular": {
+      "textStyleName": "Button01/Regular",
+      "fontStyle": "Regular",
+      "fontWeight": 400,
+      "fontSize": 14,
+      "lineHeight": 21,
+      "css": "--rz-type-button01-regular"
+    },
+    "button02.bold": {
+      "textStyleName": "Button02/Bold",
+      "fontStyle": "Bold",
+      "fontWeight": 700,
+      "fontSize": 12,
+      "lineHeight": 18,
+      "css": "--rz-type-button02-bold"
+    },
+    "button02.medium": {
+      "textStyleName": "Button02/Medium",
+      "fontStyle": "Medium",
+      "fontWeight": 500,
+      "fontSize": 12,
+      "lineHeight": 18,
+      "css": "--rz-type-button02-medium"
+    },
+    "button02.regular": {
+      "textStyleName": "Button02/Regular",
+      "fontStyle": "Regular",
+      "fontWeight": 400,
+      "fontSize": 12,
+      "lineHeight": 18,
+      "css": "--rz-type-button02-regular"
+    },
+    "status.time": {
+      "textStyleName": "Subheadline/Bold",
+      "fontStyle": "Bold",
+      "fontWeight": 700,
+      "fontSize": 15,
+      "lineHeight": 20,
+      "css": "--rz-type-status-time",
+      "note": "Status bar clock on iOS chrome."
+    }
+  },
+  "roles": {
+    "headline": "headline.bold",
+    "body": "body01.regular",
+    "controlLabel": "body02.bold",
+    "controlLabelQuiet": "body02.regular",
+    "caption": "small01.regular",
+    "captionLight": "small01.light",
+    "buttonLarge": "body02.bold",
+    "buttonSmall": "small01.regular",
+    "toast": "body02.medium",
+    "input": "body02.medium"
+  }
+}

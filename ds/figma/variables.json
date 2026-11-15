@@ -1,0 +1,479 @@
+{
+ "variables": [
+  {
+   "id": "VariableID:1230:12669",
+   "name": "Red",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Red",
+   "key": "8e1ac793cddcf5e7ddd9e37dc9d7ccbd7aad7759",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 1,
+     "g": 0.20392157137393951,
+     "b": 0.20392157137393951,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12670",
+   "name": "Black",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Black",
+   "key": "4c776bf8121f7044ae06f932dd3200c380cc4d63",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.12156862765550613,
+     "g": 0.125490203499794,
+     "b": 0.14509804546833038,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12671",
+   "name": "Green/GGreen",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Green/GGreen",
+   "key": "ef48c2395ea681ceb8bc70a00939696001b6abbb",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.9019607901573181,
+     "g": 0.9725490212440491,
+     "b": 0.9215686321258545,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12672",
+   "name": "Green/Green_01",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Green/Green_01",
+   "key": "e97447a89e7ccfdbf2c4bd164204d422f38b6385",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.8039215803146362,
+     "g": 0.9411764740943909,
+     "b": 0.8470588326454163,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12673",
+   "name": "Green/Green_02",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Green/Green_02",
+   "key": "b8d08548ab06876aacd25ea0d7a5ae070f9c8003",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.6117647290229797,
+     "g": 0.8823529481887817,
+     "b": 0.6941176652908325,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12674",
+   "name": "Green/Green_03",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Green/Green_03",
+   "key": "1790dc3a5f09da2a8b76bc0c1384c41f80899d9a",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.4156862795352936,
+     "g": 0.8274509906768799,
+     "b": 0.5372549295425415,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12675",
+   "name": "Green/Green_04",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Green/Green_04",
+   "key": "aa769648b77e31358cd14437b14027193baa8e74",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.2235294133424759,
+     "g": 0.7686274647712708,
+     "b": 0.3843137323856354,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12676",
+   "name": "Green/Primary_Fresh green",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Green/Primary_Fresh green",
+   "key": "3cec02ff37cc50abfd11a7c8bbdd543ec2a7850f",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.027450980618596077,
+     "g": 0.7098039388656616,
+     "b": 0.23137255012989044,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12677",
+   "name": "Green/Green_05",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Green/Green_05",
+   "key": "e4d847ec218500e224a49ff08ca04e68d63c3974",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.027450980618596077,
+     "g": 0.5921568870544434,
+     "b": 0.19607843458652496,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12678",
+   "name": "Green/Green_06",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Green/Green_06",
+   "key": "287702e77b8c29cd3f3d681ea0b27a062f3b1f65",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.01568627543747425,
+     "g": 0.48235294222831726,
+     "b": 0.1568627506494522,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12679",
+   "name": "Blue/GBlue",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Blue/GBlue",
+   "key": "277a0058cabe33955cf7ae0d7c4bd7a3e0344a1a",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.9215686321258545,
+     "g": 0.9372549057006836,
+     "b": 0.9803921580314636,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12680",
+   "name": "Blue/Blue_01",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Blue/Blue_01",
+   "key": "bd2180cf60516cc88eb7d5ee164dd97214ee7fda",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.7843137383460999,
+     "g": 0.843137264251709,
+     "b": 1,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12681",
+   "name": "Blue/Blue_02",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Blue/Blue_02",
+   "key": "e2958c6367aaaba5fa8806f53e1371d4ee423db5",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.5803921818733215,
+     "g": 0.6980392336845398,
+     "b": 1,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12682",
+   "name": "Blue/Blue_03",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Blue/Blue_03",
+   "key": "d9e860d62c396b78ae221aa56d76e3d118a9e704",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.3450980484485626,
+     "g": 0.529411792755127,
+     "b": 1,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12683",
+   "name": "Blue/Blue_04",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Blue/Blue_04",
+   "key": "775ed068133205cbb5ac07ad60899315d3a45b71",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.1764705926179886,
+     "g": 0.38823530077934265,
+     "b": 0.9254902005195618,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12684",
+   "name": "Blue/Secondary_Blue",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Blue/Secondary_Blue",
+   "key": "a8696c4f60e2867fbf9ddb54fd87bba1c093e5df",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.12941177189350128,
+     "g": 0.239215686917305,
+     "b": 0.8078431487083435,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12685",
+   "name": "Blue/Blue_05",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Blue/Blue_05",
+   "key": "8345014c2c1b85e31a143e75e69a653486694ce4",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.11764705926179886,
+     "g": 0.20000000298023224,
+     "b": 0.6509804129600525,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12686",
+   "name": "Blue/Blue_06",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Blue/Blue_06",
+   "key": "93074e73c54ad22ffc20469d8a73fea898857b11",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.09803921729326248,
+     "g": 0.15294118225574493,
+     "b": 0.4627451002597809,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12687",
+   "name": "Gray/Gray_01",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Gray/Gray_01",
+   "key": "e59ef8af74620fb2eac13a28cfb036808f76dc4d",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.95686274766922,
+     "g": 0.9647058844566345,
+     "b": 0.9803921580314636,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12688",
+   "name": "Gray/Gray_02",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Gray/Gray_02",
+   "key": "4065aa75493a8312779a9842ae91628208aea734",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.9254902005195618,
+     "g": 0.9333333373069763,
+     "b": 0.95686274766922,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12689",
+   "name": "Gray/Gray_03",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Gray/Gray_03",
+   "key": "1d5397c1b5a25901cce73bb353c49f97566bb72f",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.8705882430076599,
+     "g": 0.8823529481887817,
+     "b": 0.9137254953384399,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12690",
+   "name": "Gray/Gray_04",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Gray/Gray_04",
+   "key": "ee908ea21359711746488ad215f5b3f25d3c4df1",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.7137255072593689,
+     "g": 0.7372549176216125,
+     "b": 0.7882353067398071,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12691",
+   "name": "Gray/Gray_05",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Gray/Gray_05",
+   "key": "a53985325ce87d92e3b92456d5c9efe796ef1ea3",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.5529412031173706,
+     "g": 0.5764706134796143,
+     "b": 0.6196078658103943,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12692",
+   "name": "Gray/Gray_06",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Gray/Gray_06",
+   "key": "b910cb08d5e03478ceda065d488b34fda24a9a14",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.3921568691730499,
+     "g": 0.4117647111415863,
+     "b": 0.4627451002597809,
+     "a": 1
+    }
+   ]
+  },
+  {
+   "id": "VariableID:1230:12693",
+   "name": "Gray/Gray_07",
+   "collection": "Foundation",
+   "fullPath": "Foundation/Gray/Gray_07",
+   "key": "2cafd223d5c2b4c31b2473cc45287d7d0ca81ee4",
+   "resolvedType": "COLOR",
+   "scopes": [
+    "ALL_FILLS"
+   ],
+   "values": [
+    {
+     "r": 0.2235294133424759,
+     "g": 0.24313725531101227,
+     "b": 0.29411765933036804,
+     "a": 1
+    }
+   ]
+  }
+ ]
+}

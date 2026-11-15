@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — 출석 관리</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [7.1.1.4.6.0.0]출석 관리_학원_클래스 선택 후 리스트 노출 — 전체 기준 (320:134963 · 135063 전원 출석 확인 · 135169 지각 토스트 · 351:148932 클래스 없음)
+           출석 통계 다운로드 (320:135270) · 메모 (320:135411) · 시간 설정 (320:135522) · ⋮ 메뉴 (320:135645)
+    Opened from 학원관리 › 학원 출석 관리. 클래스와 학생이 모두 필요 → NonePage.gate({needs:["class","student"]}) (docs/none-page-policy.md).
+    Shared by before/ and after/ — keep both copies identical.
+  -->
+  <style>
+    .band { flex: none; padding: 16px 16px 16px; background: var(--rz-gray-01); display: flex; flex-direction: column; gap: 8px; }
+    .date { position: relative; height: 48px; border-radius: 8px; background: var(--rz-white); display: flex; align-items: center; justify-content: center; gap: 2px; font: var(--rz-type-body02-bold); color: var(--rz-gray-06); }
+    .date .rz-icon { color: var(--rz-gray-06); }
+    .date__reset { position: absolute; right: 16px; top: 12px; border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
+    .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .tile { height: 64px; border-radius: 8px; border: 0; box-shadow: inset 0 0 0 1px var(--rz-gray-03); background: var(--rz-white); display: flex; flex-direction: column; align-items: center; padding-top: 8px; cursor: pointer; color: var(--tc); }
+    .tile b { font: var(--rz-type-headline-bold); line-height: 30px; }
+    .tile span { font: var(--rz-type-small01-regular); line-height: 18px; }
+    .tile.is-on { background: var(--tb, var(--rz-primary)); color: var(--rz-white); box-shadow: none; }
+    .acts { display: grid; grid-template-columns: 168px 1fr; gap: 8px; }
+    .sort { flex: none; height: 48px; display: flex; align-items: center; justify-content: flex-end; gap: 0; padding: 0 16px; border-bottom: 1px solid var(--rz-gray-02); font: var(--rz-type-body02-regular); color: var(--rz-gray-06); }
+    .list { padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 8px; }
+    .card { position: relative; border-radius: 16px; background: var(--rz-gray-01); }
+    .card__row { display: flex; align-items: center; gap: 8px; height: 73px; padding: 0 16px; }
+    .card__who { flex: 1; min-width: 0; padding-left: 0; }
+    .card__name { display: flex; align-items: center; gap: 4px; }
+    .card__name b { font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .card__tel { border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; color: var(--rz-gray-06); }
+    .card__sub { margin: 0; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card__state { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 10px; font: var(--rz-type-small01-medium); white-space: nowrap; }
+    .card__state .rz-btn { width: 56px; min-width: 56px; padding: 0; height: 36px; }
+    .card__state .rz-btn.is-end { height: 32px; }
+    .t-in { color: var(--rz-green-05); } .t-leave { color: var(--rz-blue-03); } .t-end { color: var(--rz-gray-06); } .t-abs { color: #FF6644; }
+    .card__more { flex: none; border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
+    .contact { margin: -9px 16px 16px; border-radius: 8px; background: var(--rz-white); overflow: hidden; }
+    .contact__line { display: flex; gap: 24px; padding: 15px 16px 15px; font: var(--rz-type-small01-regular); color: var(--rz-black); }
+    .contact__line b { font-weight: 500; margin-right: 10px; }
+    .contact__fold { height: 16px; border: 0; width: 100%; background: var(--rz-gray-02); color: var(--rz-gray-05); font-size: 8px; line-height: 16px; cursor: pointer; }
+    .menu { position: absolute; right: 24px; top: 14px; z-index: 30; width: 136px; padding: 16px 0; border-radius: 8px; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-03); display: flex; flex-direction: column; gap: 12px; }
+    .menu button { height: 21px; border: 0; background: none; padding: 0; cursor: pointer; font: var(--rz-type-body02-regular); color: var(--rz-black); }
+    .empty { padding: 48px 16px; text-align: center; font: var(--rz-type-body02-regular); color: var(--rz-gray-05); }
+    .none { padding-top: 96px; }
+
+    /* bottom sheets */
+    .att-sheet { width: 100%; background: var(--rz-white); border-radius: 12px 12px 0 0; display: flex; flex-direction: column; }
+    .att-sheet__head { position: relative; flex: none; height: 48px; display: grid; place-items: center; border-bottom: 1px solid #F4F4F4; font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .att-sheet__close { position: absolute; right: 16px; top: 14px; border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; }
+    .att-sheet__foot { flex: none; padding: 16px; background: var(--rz-white); }
+    .dl__year { padding: 16px; background: var(--rz-gray-01); }
+    .dl__months { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 16px 16px 0; }
+    .dl__month { height: 56px; border-radius: 16px; background: var(--rz-gray-01); display: flex; align-items: center; padding: 0 16px; }
+    .dl__note { margin: 8px 16px 0; height: 48px; border-radius: 8px; background: #F7FCFF; display: flex; align-items: center; padding: 0 16px; font: var(--rz-type-small01-regular); color: var(--rz-blue-03); }
+    .dl__only { margin-top: auto; height: 40px; background: var(--rz-gray-01); display: flex; align-items: center; justify-content: center; }
+    .memo { padding: 16px 16px 0; }
+    .memo .rz-textarea, .memo textarea { height: 200px; }
+    .att-sheet__body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .att-sheet__body > * { flex: none; }
+    .att-sheet__body > .dl__only { margin-top: auto; }
+    .card__state .rz-btn--red { --fg: #FF6644; --bd: #FF6644; }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script src="../common/none-page.js?v=3"></script>
+  <script src="../common/time-picker.js?v=3"></script>
+  <script>
+    const R = Rallyz;
+    const { $, alert, go } = Onb;
+    const data0 = RzData.get();
+    if (!data0.academy) location.replace("./index.html");
+    const academy = data0.academy?.name || "";
+
+    /* ---- today's date + per-student attendance records (session only, by date) ---- */
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const dateKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const dateLabel = `${now.getFullYear()}년 ${pad(now.getMonth() + 1)}월 ${pad(now.getDate())}일`;
+    const hhmm = () => `${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
+    const rec = (i) => RzData.get().attendance?.[dateKey]?.[i] || {};
+    const setRec = (i, patch) => RzData.update((d) => { d.attendance = d.attendance || {}; d.attendance[dateKey] = d.attendance[dateKey] || {}; d.attendance[dateKey][i] = { ...(d.attendance[dateKey][i] || {}), ...patch }; });
+    const kind = (r) => (r.absent ? "absent" : r.leave ? "leave" : r.in ? "in" : "none");
+
+    let filter = "all", menu = null;
+    const closeMenu = () => { menu?.remove(); menu = null; };
+    const opened = new Set(); // students whose contact panel is open
+    const screenEl = () => document.querySelector(".rz-device__screen");
+
+    /* ---- header ---- */
+    const header = R.FlowHeader({ title: "출석", subtitle: academy, lead: "close", buttonLabel: "명단 다운",
+      onLead: () => go("./academy-manage.html"), onTrail: () => openDownload() });
+
+    /* ---- bottom sheet helper ---- */
+    function openSheet({ title, body, foot, height }) {
+      const x = $("button", "att-sheet__close", [R.Icon("line/ic24_close-type01", { size: 20, color: "var(--rz-gray-06)" })], { type: "button", "aria-label": "닫기" });
+      body.classList.add("att-sheet__body");
+      const sheet = $("div", "att-sheet", [$("div", "att-sheet__head", [title, x]), body, $("div", "att-sheet__foot", [foot])], { role: "dialog", "aria-modal": "true", "aria-label": title });
+      if (height) sheet.style.height = height + "px";
+      const dim = $("div", "guide-dim", [sheet]);
+      const close = () => dim.remove();
+      x.addEventListener("click", close);
+      dim.addEventListener("click", (e) => e.target === dim && close());
+      screenEl().append(dim);
+      return close;
+    }
+
+    /* ---- 출석 통계 다운로드 (320:135270) ---- */
+    function openDownload() {
+      const picked = new Set();
+      const yr = now.getFullYear();
+      const months = $("div", "dl__months", Array.from({ length: 12 }, (_, i) => {
+        const cb = R.Checkbox({ label: `${i + 1}월`, labelStyle: "body02_bold", onChange: (on) => {
+          if (on && picked.size >= 3) { cb.querySelector("input").checked = false; alert(screenEl(), { message: "최대 3개월까지 선택이 가능합니다." }); return; }
+          on ? picked.add(i) : picked.delete(i);
+        } });
+        return $("div", "dl__month", [cb]);
+      }));
+      const body = $("div", "", [
+        $("div", "dl__year", [R.Select({ placeholder: "년도 선택", size: 48, options: [yr, yr - 1, yr - 2].map((y) => `${y}년`) })]),
+        months,
+        $("div", "dl__note", ["※ 최대 3개월까지 선택이 가능합니다."]),
+        $("div", "dl__only", [R.Checkbox({ label: "출석 처리건만 다운" })]),
+      ]);
+      // 다운로드 file isn't designed → the button just closes the sheet
+      const close = openSheet({ title: "출석 통계 다운로드", height: 592, body, foot: R.Button({ label: "다운로드", size: 56, onClick: () => close() }) });
+    }
+
+    /* ---- 메모 (320:135411) ---- */
+    function openMemo(i) {
+      let text = rec(i).memo || "";
+      const body = $("div", "memo", [R.Textarea({ placeholder: "메모 입력", value: text, onInput: (v) => (text = v) })]);
+            const close = openSheet({ title: "메모", height: 368, body, foot: R.Button({ label: "저장", size: 56, onClick: () => { setRec(i, { memo: text }); close(); } }) });
+    }
+
+    /* ---- list rows ---- */
+    function stateCell(i, r) {
+      const k = kind(r);
+      if (k === "none") return [
+        R.Button({ label: "결석", size: "t32", variant: "line", color: "red", onClick: () => { setRec(i, { absent: true, in: null, leave: null, out: null, late: false }); render(); } }),
+        R.Button({ label: "출석", size: "t32", variant: "line", color: "green", onClick: () => { setRec(i, { in: hhmm(), absent: false }); render(); } }),
+      ];
+      if (k === "absent") return [$("span", "t-abs", ["결석"])];
+      const cells = [$("span", "t-in", [`${r.in} 출석${r.late ? "(지각)" : ""}`])];
+      if (r.leave) cells.push($("span", "t-leave", [`${r.leave} 조퇴`]));
+      else if (r.out) cells.push($("span", "t-end", [`${r.out} 종료`]));
+      else cells.push(R.Button({ label: "종료", size: "t32", variant: "line", color: "grey", onClick: () => { setRec(i, { out: hhmm() }); render(); } }));
+      return cells;
+    }
+    function openMenuFor(i, card, s) {
+      closeMenu();
+      // 보강 isn't designed → no action
+      const item = (label, fn) => { const b = $("button", "", [label], { type: "button" }); b.addEventListener("click", () => { closeMenu(); fn?.(); }); return b; };
+      menu = $("div", "menu", [
+        item("메모", () => openMemo(i)),
+        item("조퇴", () => { const r = rec(i); setRec(i, { in: r.in || hhmm(), leave: hhmm(), absent: false }); render(); }),
+        item("지각", () => { const r = rec(i); setRec(i, { in: r.in || hhmm(), late: true, absent: false }); render(); R.showToast(screenEl(), { text: `${s.name}이(가) 지각 처리 되었습니다.` }, { bottom: 48 }); }),
+        item("보강"),
+        item("출석 시간 변경", () => TimePicker.open({ value: rec(i).in || "", onConfirm: (v) => { setRec(i, { in: v, absent: false }); render(); } })),
+        item("출석 취소", () => { setRec(i, { in: null, leave: null, out: null, late: false, absent: false }); render(); }),
+      ]);
+      card.append(menu);
+    }
+    function row(s, i) {
+      const r = rec(i);
+      const more = $("button", "card__more", [R.Icon("line/ic24_more", { size: 24, color: "var(--rz-gray-04)" })], { type: "button", "aria-label": `${s.name} 더보기` });
+      const tel = $("button", "card__tel", [R.Icon("line/16_tel", { size: 16 })], { type: "button", "aria-label": "연락처" });
+      const card = $("article", "card", [$("div", "card__row", [
+        R.Icon("solid/profile", { size: 32 }),
+        $("div", "card__who", [$("div", "card__name", [$("b", "", [s.name]), tel]), $("p", "card__sub", [s.klass || "-"])]),
+        $("div", "card__state", stateCell(i, r)),
+        more,
+      ])]);
+      if (opened.has(i)) {
+        const fold = $("button", "contact__fold", ["▲"], { type: "button", "aria-label": "접기" });
+        fold.addEventListener("click", () => { opened.delete(i); render(); });
+        card.append($("div", "contact", [$("div", "contact__line", [$("span", "", [$("b", "", ["학생"]), s.phone || "-"]), $("span", "", [$("b", "", ["학부모"]), s.guardian || "-"])]), fold]));
+      }
+      tel.addEventListener("click", () => { opened.has(i) ? opened.delete(i) : opened.add(i); render(); });
+      more.addEventListener("click", (e) => { e.stopPropagation(); menu && menu.parentNode === card ? closeMenu() : openMenuFor(i, card, s); });
+      return card;
+    }
+
+    /* ---- band: date · tiles · actions ---- */
+    const TILES = [["all", "전체", null, null], ["none", "미처리", "var(--rz-gray-05)", "var(--rz-gray-05)"], ["in", "출석", "var(--rz-green-04)", null], ["leave", "조퇴", "var(--rz-blue-02)", "var(--rz-blue-02)"], ["absent", "결석", "#FF6644", "#FF6644"]];
+    const band = $("div", "band");
+    const list = $("div", "list");
+    const sortRow = $("div", "sort", ["이름순", R.Icon("line/ic24_arrow-down", { size: 16, color: "var(--rz-gray-06)" })]); // sort options aren't designed → no action
+    function renderBand(students) {
+      const counts = { all: students.length, none: 0, in: 0, leave: 0, absent: 0 };
+      students.forEach((s, i) => { counts[kind(rec(i))]++; });
+      const reset = $("button", "date__reset", [R.Icon("line/ic24_initialization01", { size: 24, color: "var(--rz-gray-06)" })], { type: "button", "aria-label": "새로고침" });
+      reset.addEventListener("click", () => render()); // refresh re-reads the list
+      band.replaceChildren(
+        $("div", "date", [dateLabel, R.Icon("line/ic24_arrow-down", { size: 16 }), reset]), // date picker isn't designed → today only
+        $("div", "tiles", TILES.map(([key, label, tc, tb]) => {
+          const t = $("button", "tile" + (filter === key ? " is-on" : ""), [$("b", "", [String(counts[key])]), $("span", "", [label])], { type: "button" });
+          t.style.setProperty("--tc", tc || "var(--rz-black)"); if (tb) t.style.setProperty("--tb", tb);
+          if (key === "all") t.style.setProperty("--tc", "var(--rz-black)");
+          t.addEventListener("click", () => { filter = key; render(); });
+          return t;
+        })),
+        $("div", "acts", [
+          R.Button({ label: "수업 종료", size: 56, color: "grey", onClick: () => { // 출석 처리된 학생만 종료 시각 기록 (결석·미처리·이미 종료/조퇴한 학생은 제외)
+            const t = hhmm();
+            students.forEach((s, i) => { const r = rec(i); if (r.in && !r.out && !r.leave && !r.absent) setRec(i, { out: t }); });
+            render();
+          } }),
+          R.Button({ label: "전원 출석", size: 56, onClick: () => alert(screenEl(), { message: "전원 출석을 진행 하시겠습니까?\n출석 취소는 개별로 진행하실 수 있습니다.", cancelLabel: "아니오", confirmLabel: "예",
+            onConfirm: () => { const t = hhmm(); students.forEach((s, i) => { if (kind(rec(i)) === "none") setRec(i, { in: t, absent: false }); }); render(); } }) }),
+        ]),
+      );
+    }
+    function render() {
+      closeMenu();
+      const students = RzData.get().students;
+      renderBand(students);
+      const rows = students.map((s, i) => [s, i]).filter(([, i]) => filter === "all" || kind(rec(i)) === filter).sort((a, b) => a[0].name.localeCompare(b[0].name, "ko"));
+      list.replaceChildren(...(rows.length ? rows.map(([s, i]) => row(s, i)) : [$("p", "empty", ["해당하는 학생이 없습니다."])]));
+    }
+
+    /* ---- gate: 클래스 → 학생 ---- */
+    const gated = NonePage.gate({ needs: ["class", "student"], from: "attendance" });
+    const body = gated ? [gated] : [band, sortRow, list];
+    const scroll = $("div", "scroll", gated ? body : [band, sortRow, list]);
+    const screen = $("div", "screen", [R.StatusBar(), header, scroll]);
+    document.addEventListener("click", (e) => { if (menu && !e.target.closest(".menu, .card__more")) closeMenu(); });
+    document.getElementById("root").append(R.Device({ children: [screen] }));
+    if (!gated) render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — 학원 생성 1/3</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <style>
+    /* Figma: [온보딩][5.3.1.0.0.0.0]온보딩_학원 만들기 (286:36963)
+              + …_재원생수미입력시(알럿) (286:37000) — same screen, validation alert state */
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 40px 16px;
+      font-family: var(--rz-font-sans); color: var(--rz-black);
+      background: linear-gradient(165deg, var(--rz-gray-01), var(--rz-gray-02));
+    }
+    .screen { position: relative; display: flex; flex-direction: column; height: 100%; }
+    .scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; padding: 16px 16px 16px; }
+    .scroll::-webkit-scrollbar { display: none; }
+
+
+    .field { margin-top: 32px; }
+    .field:first-of-type { margin-top: 16px; }
+    .field__label { display: flex; align-items: flex-end; gap: 4px; margin: 0 0 8px; font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .field__label em { font-style: normal; font: var(--rz-type-small01-bold); color: var(--rz-secondary); }
+    .field__label--short { line-height: 16px; height: 16px; }
+    .field__stack { display: flex; flex-direction: column; gap: 8px; }
+    .radios { display: grid; grid-template-columns: 176px 1fr; row-gap: 8px; border: 0; margin: 0; padding: 0; }
+    .choices { display: grid; grid-template-columns: repeat(3, 109px); gap: 8px; border: 0; margin: 0; padding: 0; }
+
+    /* 카카오(다음) 우편번호 검색 오버레이 */
+    .postcode { position: absolute; inset: 0; z-index: 50; display: grid; place-items: center; padding: 0 24px; background: rgba(0, 0, 0, 0.5); }
+    .postcode[hidden] { display: none; }
+    .postcode__modal { width: 100%; height: 500px; max-height: calc(100% - 96px); display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; background: var(--rz-white); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); }
+    .postcode__head { flex: none; height: 52px; padding: 0 8px 0 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--rz-gray-02); font: var(--rz-type-body01-bold); }
+    .postcode__close { border: 0; background: none; padding: 8px; font: var(--rz-type-body02-bold); color: var(--rz-gray-07); cursor: pointer; }
+    .postcode__body { flex: 1; min-height: 0; }
+    .rz-input input[name="address"] { cursor: pointer; }
+
+    .bottom-bar { flex: none; height: 88px; padding: 16px; background: var(--rz-white); }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+
+  <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script>
+    const { Device, StatusBar, FlowHeader, Button, Input, Radio, Choice, showAlert } = window.Rallyz;
+    const $ = (tag, cls, kids = []) => { const n = document.createElement(tag); if (cls) n.className = cls; n.append(...[].concat(kids)); return n; };
+    const label = (text, required, short) => {
+      const l = $("p", "field__label" + (short ? " field__label--short" : ""), [text]);
+      if (required) l.append($("em", "", ["필수"]));
+      return l;
+    };
+
+    /* ---------- form state ---------- */
+    const state = { name: "", size: null, targets: new Set(), address: "", addressDetail: "", phone: "" };
+
+    /* ---------- fields ---------- */
+
+    const nameField = $("section", "field", [
+      label("학원명", true),
+      Input({ placeholder: "학원 이름 입력", name: "name", onInput: (v) => (state.name = v.trim()) }),
+    ]);
+
+    const radios = $("fieldset", "radios");
+    radios.setAttribute("aria-label", "재원생 수");
+    for (const opt of ["10명 이하", "10~50명", "50~100명", "100명 이상"]) {
+      radios.append(Radio({ label: opt, name: "size", value: opt, onChange: (v) => (state.size = v) }));
+    }
+    const sizeField = $("section", "field", [label("재원생 수", true), radios]);
+
+    const choices = $("fieldset", "choices");
+    choices.setAttribute("aria-label", "대상 선택");
+    for (const opt of ["유아", "초저", "초고", "중등", "고등", "일반"]) {
+      choices.append(Choice({
+        label: opt, size: 48, checked: state.targets.has(opt),
+        onChange: (on) => (on ? state.targets.add(opt) : state.targets.delete(opt)),
+      }));
+    }
+    const targetField = $("section", "field", [label("대상 선택", true), choices]);
+
+    const detailBox = Input({ placeholder: "상세주소 입력", name: "addressDetail", onInput: (v) => (state.addressDetail = v.trim()) });
+    const detailInput = detailBox.querySelector("input");
+    const addressBox = Input({ placeholder: "도로명, 건물명, 번지 검색", name: "address", actionLabel: "주소 검색", onAction: () => openPostcode() });
+    const addressInput = addressBox.querySelector("input");
+    addressInput.readOnly = true; // 주소는 검색 결과로만 입력
+    addressInput.addEventListener("click", () => openPostcode());
+
+    /* ---------- 카카오 우편번호 서비스 ---------- */
+    const postcodeBody = $("div", "postcode__body");
+    const postcodeClose = $("button", "postcode__close", ["닫기"]);
+    postcodeClose.type = "button";
+    const postcodeModal = $("div", "postcode__modal", [$("div", "postcode__head", [$("span", "", ["주소 검색"]), postcodeClose]), postcodeBody]);
+    postcodeModal.setAttribute("role", "dialog");
+    postcodeModal.setAttribute("aria-modal", "true");
+    const postcode = $("div", "postcode", [postcodeModal]);
+    postcode.hidden = true;
+    postcodeClose.addEventListener("click", () => (postcode.hidden = true));
+    postcode.addEventListener("click", (e) => { if (e.target === postcode) postcode.hidden = true; }); // 딤 영역 클릭 시 닫기
+    function openPostcode() {
+      if (!window.daum?.Postcode) {
+        showAlert(screen, { message: "주소 검색 서비스를 불러오지 못했어요. 인터넷 연결을 확인하세요." });
+        return;
+      }
+      postcode.hidden = false;
+      postcodeBody.replaceChildren();
+      new daum.Postcode({
+        width: "100%", height: "100%",
+        oncomplete: (d) => {
+          const addr = d.userSelectedType === "R" ? d.roadAddress : d.jibunAddress;
+          addressInput.value = addr;
+          state.address = addr;
+          postcode.hidden = true;
+          detailInput.focus({ preventScroll: true });
+        },
+      }).embed(postcodeBody);
+    }
+
+    const addressField = $("section", "field", [
+      label("학원 주소", true),
+      $("div", "field__stack", [
+        addressBox,
+        detailBox,
+      ]),
+    ]);
+
+    const phoneField = $("section", "field", [
+      label("학원 대표 번호", false, true),
+      Input({ placeholder: "학생, 학부모가 연락할 수 있는 전화번호 입력", name: "phone", type: "tel", onInput: (v) => (state.phone = v.trim()) }),
+    ]);
+
+    /* ---------- validation (alert = 286:37000) ---------- */
+    const rules = [
+      [() => state.name, "학원명을 입력하세요.", nameField],
+      [() => state.size, "학원의 재원생 수를 선택하세요.", sizeField],
+      [() => state.targets.size, "학원의 대상을 선택하세요.", targetField],
+      [() => state.address, "학원 주소를 입력하세요.", addressField],
+    ];
+    function submit() {
+      const miss = rules.find(([ok]) => !ok());
+      if (miss) {
+        showAlert(screen, {
+          message: miss[1],
+          onConfirm: () => {
+            miss[2].scrollIntoView({ block: "center", behavior: "smooth" });
+            miss[2].querySelector("input")?.focus({ preventScroll: true });
+          },
+        });
+        return;
+      }
+      try { sessionStorage.setItem(`rz.${RzData.slot}.academyName`, state.name); } catch { /* private mode */ } // 버전별 키(Onb.store 와 같은 규칙)
+      RzData.setAcademy({ name: state.name, size: state.size, targets: [...state.targets], address: state.address, addressDetail: state.addressDetail, phone: state.phone });
+      location.href = "./academy-done.html";
+    }
+
+    /* ---------- layout ---------- */
+    const scroll = $("div", "scroll", [nameField, sizeField, targetField, addressField, phoneField]);
+    const bottom = $("div", "bottom-bar", [Button({ label: "완료", size: 56, onClick: submit })]);
+    const screen = $("div", "screen", [
+      StatusBar(),
+      FlowHeader({ title: "학원 생성", lead: "prev", trailText: "1/3", onLead: () => (history.length > 1 ? history.back() : (location.href = "./onboarding-intro.html")) }),
+      scroll,
+      bottom,
+      postcode,
+    ]);
+    const device = Device({ children: [screen] });
+    document.getElementById("root").append(device);
+
+    // demo hook: ?state=alert opens the 재원생 수 alert like the Figma frame
+    if (new URLSearchParams(location.search).get("state") === "alert") {
+      nameField.querySelector("input").value = "";
+      showAlert(device.querySelector(".rz-device__screen"), { message: "학원의 재원생 수를 선택하세요." });
+    }
+  </script>
+</body>
+</html>

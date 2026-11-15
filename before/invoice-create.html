@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rallyz(개선 전) — 청구서 생성</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="../ds/tokens.css" />
+  <link rel="stylesheet" href="../ds/components.css" />
+  <link rel="stylesheet" href="../common/onboarding.css" />
+  <!--
+    Figma: [6.2.2.1.0.0.0]학원관리_네비게이션_청구서 생성 (351:150069 · 클래스 미선택) · …청구서 생성 리스트 (351:150102) · 03.04. 청구서 생성(기간 클래스)_일괄 펼침 (351:150463)
+           [청구서 개선]…청구서 생성 = 청구년/월 설정 시트 (351:151124) · 등록된 학생이 없을 때 (351:150316) · 검색된 학생이 없을 때 (351:150363) · 등록된 클래스가 없을 때 (351:150409)
+    Opened from 학원관리 › 청구/납부 › 청구서 생성. 클래스와 학생이 모두 필요 → NonePage.missing({needs:["class","student"]}) 순서(클래스 → 학생)로 이 화면 전용 빈 상태를 보여준다 (docs/none-page-policy.md).
+    조정 → invoice-adjust.html (351:149392 · 351:149457). Data/math: common/invoice.js. Shared by before/ and after/ — keep both copies identical (title only differs).
+  -->
+  <style>
+    .band { flex: none; background: var(--rz-gray-01); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .ym { height: 56px; border-radius: 12px; background: var(--rz-white); display: flex; align-items: center; justify-content: space-between; }
+    .ym__nav { width: 48px; height: 48px; margin: 0 0; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: pointer; }
+    .ym__title { flex: 1; height: 48px; border: 0; background: none; padding: 0; cursor: pointer; font: var(--rz-type-body01-bold); color: var(--rz-gray-06); }
+    .ym__title em { font-style: normal; color: var(--rz-primary); }
+    .filters { display: grid; grid-template-columns: 120px 1fr; gap: 8px; }
+    .sort { flex: none; height: 49px; display: flex; align-items: center; justify-content: flex-end; padding: 0 16px; border-bottom: 1px solid var(--rz-gray-02); background: var(--rz-white); font: var(--rz-type-body02-regular); color: var(--rz-gray-06); }
+    .list { padding: 16px 16px 64px; display: flex; flex-direction: column; gap: 8px; }
+    .none { padding-top: 48px; }
+    .none--pick { padding-top: 96px; }
+    .none p { margin: 16px 0 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); white-space: pre-line; }
+    .none h2 { white-space: pre-line; }
+    .none--pick h2 { font: var(--rz-type-headline-bold); }
+    .none .rz-btn { margin-top: 24px; }
+
+    /* student box: header · bill card · footer; 추가청구서 sits inside the box on a darker ground */
+    .sbox { border-radius: 12px; background: var(--rz-gray-01); overflow: hidden; }
+    .bill { position: relative; padding: 16px; }
+    .bill--extra { background: var(--rz-gray-02); }
+    .bill__head { display: flex; align-items: center; gap: 8px; height: 24px; margin-bottom: 16px; }
+    .bill__head .rz-check { flex: none; }
+    .bill__name { flex: 1; min-width: 0; font: var(--rz-type-body02-bold); color: var(--rz-gray-07); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bill__card { border-radius: 12px; background: var(--rz-white); }
+    .bill__klass { padding: 16px; height: 50px; box-sizing: border-box; border-bottom: 1px solid var(--rz-gray-02); font: var(--rz-type-small01-medium); color: var(--rz-gray-04); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bill__body { padding: 16px 16px 15px; }
+    .bill__title { display: flex; align-items: center; gap: 8px; height: 18px; font: var(--rz-type-small01-medium); color: var(--rz-gray-06); }
+    .bill__chip { display: inline-flex; align-items: center; gap: 0; height: 16px; border-radius: 4px; background: var(--rz-blue-03); color: var(--rz-white); padding: 0 4px 0 0; font: 700 10px/15px var(--rz-font-sans); }
+    .bill__amount { display: flex; align-items: center; gap: 4px; margin-top: 7px; height: 24px; font: var(--rz-type-body02-bold); color: var(--rz-gray-07); }
+    .bill__amount > span:first-child { margin-right: 0; }
+    .bill__amount .grow { flex: 1; }
+    .bill__amount .rz-btn { padding: 2px 8px 4px; }
+    .bill__toggle { flex: none; border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; margin-left: 4px; }
+    .bill__detail { padding: 0 16px 16px; font: var(--rz-type-small01-regular); color: var(--rz-gray-06); }
+    .bill__detail h4 { margin: 8px 0 8px; font: var(--rz-type-small01-bold); color: var(--rz-gray-07); }
+    .bill__detail h4:first-child { margin-top: 0; }
+    .bill__detail > div { display: flex; justify-content: space-between; line-height: 18px; margin-bottom: 4px; }
+    .bill__detail hr { border: 0; border-top: 1px solid var(--rz-gray-02); margin: 0 -16px 16px; }
+    .bill__detail .gap { height: 12px; }
+    .bill__foot { margin-top: 8px; height: 40px; border-radius: 12px; background: var(--rz-white); display: flex; align-items: center; gap: 8px; padding: 0 16px; font: 700 12px/18px var(--rz-font-sans); color: var(--rz-gray-07); white-space: nowrap; }
+    .bill__foot .push { margin-left: auto; }
+    .bill__foot u { color: var(--rz-secondary); text-underline-offset: 2px; }
+    .stamp { display: inline-flex; align-items: center; gap: 8px; }
+    .stamp--make { color: var(--rz-blue-03); } .stamp--paid { color: var(--rz-primary); }
+    .stamp .rz-chip { margin: 0; }
+
+    /* 일괄 펼침/접기: 스크롤과 무관하게 하단 "N건 선택됨" 바 위(16px)에 고정 — 시안 351:150102 (우측 16px) */
+    .pillfix { position: absolute; right: 16px; bottom: 144px; z-index: 20; }
+    .pill { position: static; height: 32px; border: 0; border-radius: 16px; background: var(--rz-white); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16); padding: 0 8px 0 14px; display: inline-flex; align-items: center; gap: 2px; font: var(--rz-type-small01-medium); color: var(--rz-gray-07); cursor: pointer; }
+
+    .res { width: 100%; height: 648px; border-radius: 12px 12px 0 0; background: var(--rz-white); display: flex; flex-direction: column; }
+    .res__head { position: relative; flex: none; height: 48px; display: grid; place-items: center; font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .res__close { position: absolute; right: 16px; top: 14px; border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
+    .res__body { flex: 1; min-height: 0; overflow-y: auto; padding: 64px 16px 24px; text-align: center; scrollbar-width: none; }
+    .res__body img { width: 120px; height: 120px; display: block; margin: 0 auto; }
+    .res__body h2 { margin: 32px 0 0; font: var(--rz-type-headline-bold); color: var(--rz-black); white-space: pre-line; }
+    .res__body p { margin: 16px 0 0; font: var(--rz-type-body02-regular); color: var(--rz-gray-06); white-space: pre-line; }
+    .res__chips { margin-top: 32px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .res__chip { height: 32px; max-width: 100%; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 16px; background: var(--rz-gray-02); font: var(--rz-type-small01-medium); color: var(--rz-gray-05); }
+    .sort { cursor: pointer; border-top: 0; border-left: 0; border-right: 0; width: 100%; box-sizing: border-box; gap: 0; }
+    .sheet { width: 100%; background: var(--rz-white); border-radius: 12px 12px 0 0; display: flex; flex-direction: column; }
+    .sheet__head { position: relative; flex: none; height: 48px; display: grid; place-items: center; font: var(--rz-type-body02-bold); color: var(--rz-black); }
+    .sheet__close { position: absolute; right: 16px; top: 14px; border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; }
+    .sheet__foot { flex: none; padding: 16px; }
+    .flt { padding: 0; }
+    .flt__row { width: 100%; height: 48px; border: 0; background: none; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; font: var(--rz-type-body02-regular); color: var(--rz-gray-07); }
+    .count { flex: none; height: 40px; background: var(--rz-gray-02); display: grid; place-items: center; font: var(--rz-type-small01-bold); color: var(--rz-gray-06); }
+    .bar { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 16px; background: var(--rz-white); }
+  </style>
+</head>
+<body class="rz">
+  <div id="root"></div>
+  <script src="../ds/rallyz.browser.js"></script>
+  <script src="../common/home-chip.js?v=63"></script>
+  <script src="../common/data.js?v=5"></script>
+  <script src="../common/onboarding.js?v=4"></script>
+  <script src="../common/none-page.js?v=3"></script>
+  <script src="../common/time-picker.js?v=3"></script>
+  <script src="../common/ym-picker.js?v=3"></script>
+  <script src="../common/due-picker.js?v=3"></script>
+  <script src="../common/invoice.js?v=3"></script>
+  <script>
+    const R = Rallyz, I = Invoice;
+    const { $, go, store } = Onb;
+    const data0 = RzData.get();
+    if (!data0.academy) location.replace("./index.html");
+    const academy = data0.academy?.name || "";
+    const KIND_OPT = ["기간반", "회차반"];
+
+    /* 처음 진입(학원관리 등)에서는 청구년월·클래스 구분을 비워 선택부터 시작한다. 조정·확인·완료에서 돌아올 때(?keep=1 · ?result=1)만 직전 선택을 이어간다. */
+    const qs = new URLSearchParams(location.search);
+    if (!qs.has("keep") && !qs.has("result") && !qs.has("adjusted")) { store.set("invYm", ""); store.set("invKind", ""); store.set("invKlass", ""); store.set("invFilter", ""); }
+    /* state survives the round trip to 조정 (rz.* session keys) */
+    const st = {
+      ym: store.get("invYm") || I.nowYm(),
+      kind: KIND_OPT.includes(store.get("invKind")) ? store.get("invKind") : "",
+      klass: store.get("invKlass") || "",
+      q: "",
+      status: new Set((() => { try { const a = JSON.parse(store.get("invFilter") || "[]"); return a.length ? a : ["all"]; } catch { return ["all"]; } })()), // 조회 기준: all | none | made | paid
+      selected: new Set(),
+      open: new Set(),
+    };
+    const persist = () => { store.set("invYm", st.ym); store.set("invKind", st.kind); store.set("invKlass", st.klass); store.set("invFilter", JSON.stringify([...st.status])); };
+
+    /* ---------- derived ---------- */
+    const missing = () => NonePage.missing({ needs: ["class", "student"] });
+    function visible() {
+      const kind = st.kind === "회차반" ? "회차" : "기간";
+      return RzData.get().students.map((s, sid) => ({ s, sid })).filter(({ s, sid }) => {
+        const c = I.klassOf(s);
+        if (!c || I.kindOf(c) !== kind) return false;
+        if (st.klass && s.klass !== st.klass) return false;
+        if (!st.status.has("all")) { // 조회 기준
+          const main = I.billsOf(sid, st.ym).main;
+          if (!st.status.has(!main ? "none" : main.paidAt ? "paid" : "made")) return false;
+        }
+        return !st.q || s.name.includes(st.q);
+      });
+    }
+    const classOptions = () => RzData.get().classes.filter((c) => I.kindOf(c) === (st.kind === "회차반" ? "회차" : "기간")).map((c) => c.name);
+
+    /* ---------- header ---------- */
+    const header = R.FlowHeader({ title: "청구서 생성", subtitle: academy, lead: "close", onLead: () => go("./academy-manage.html") });
+
+    /* ---------- band ---------- */
+    const band = $("div", "band");
+    function monthCard() {
+      const [y, m] = I.ymParts(st.ym);
+      const nav = (dir) => {
+        const b = $("button", "ym__nav", [R.Icon(dir < 0 ? "line/ic24_arrow-left" : "line/ic24_arrow-right", { size: 24, color: "var(--rz-gray-04)" })], { type: "button", "aria-label": dir < 0 ? "이전 달" : "다음 달" });
+        b.addEventListener("click", () => { st.ym = I.shiftYm(st.ym, dir); st.selected.clear(); st.open.clear(); persist(); render(); });
+        return b;
+      };
+      const title = $("button", "ym__title", [`${y}년 `, $("em", "", [`${m}월`]), " 납부 청구서"], { type: "button" });
+      title.addEventListener("click", () => YmPicker.open({ year: y, month: m, onConfirm: (yy, mm) => { st.ym = I.ymKey(yy, mm); st.selected.clear(); st.open.clear(); persist(); render(); } }));
+      return $("div", "ym", [nav(-1), title, nav(1)]);
+    }
+    function dropdowns(disabled, classDisabled) {
+      return $("div", "filters", [
+        R.Select({ value: st.kind, placeholder: "클래스 구분", size: 40, disabled, options: KIND_OPT, onChange: (v) => { st.kind = v; st.klass = ""; st.selected.clear(); persist(); render(); } }),
+        R.Select({ value: st.klass || (st.kind ? "전체 클래스" : ""), placeholder: "전체 클래스", size: 40, disabled: disabled || classDisabled, options: ["전체 클래스", ...classOptions()], onChange: (v) => { st.klass = v === "전체 클래스" ? "" : v; st.selected.clear(); persist(); renderBody(); } }),
+      ]);
+    }
+    function searchBox(disabled) {
+      const s = R.Search({ placeholder: "학생 이름, 관리용 이름 입력", value: st.q, onInput: (v) => { st.q = v.trim(); renderBody(); } });
+      if (disabled) { s.classList.add("is-disabled"); s.querySelector("input").disabled = true; }
+      return s;
+    }
+
+    /* ---------- body pieces ---------- */
+    const FILTERS = [["all", "전체내역"], ["none", "미생성"], ["made", "생성완료"], ["paid", "납부완료"]];
+    const sortRow = () => { // 조회 기준 (375:162750)
+      const label = st.status.has("all") ? "전체내역" : FILTERS.filter(([k]) => st.status.has(k)).map(([, l]) => l).join(", ");
+      const b = $("button", "sort", [label, R.Icon("line/ic24_arrow-down", { size: 16, color: "var(--rz-gray-04)" })], { type: "button", "aria-label": "조회 기준" });
+      b.addEventListener("click", openFilter);
+      return b;
+    };
+    function openFilter() {
+      const draft = new Set(st.status);
+      const toggle = (k) => {
+        if (k === "all") { draft.clear(); draft.add("all"); }
+        else { draft.delete("all"); draft.has(k) ? draft.delete(k) : draft.add(k); if (!draft.size) draft.add("all"); }
+        paint();
+      };
+      const x = $("button", "sheet__close", [R.Icon("line/ic24_close-type01", { size: 20, color: "var(--rz-gray-06)" })], { type: "button", "aria-label": "닫기" });
+      const list = $("div", "flt");
+      function paint() {
+        list.replaceChildren(...FILTERS.map(([k, label]) => {
+          const row = $("button", "flt__row", [label, R.Icon(draft.has(k) ? "glyph/check-circle-checked" : "glyph/check-circle-default", { size: 24 })], { type: "button", role: "checkbox", "aria-checked": String(draft.has(k)) });
+          row.addEventListener("click", () => toggle(k));
+          return row;
+        }));
+      }
+      const apply = R.Button({ label: "적용", size: 56, onClick: () => { st.status = draft; st.selected.clear(); persist(); dim.remove(); renderBody(); } });
+      const sheet = $("div", "sheet", [$("div", "sheet__head", ["조회 기준", x]), list, $("div", "sheet__foot", [apply])], { role: "dialog", "aria-modal": "true", "aria-label": "조회 기준" });
+      const dim = $("div", "guide-dim", [sheet]);
+      x.addEventListener("click", () => dim.remove());
+      dim.addEventListener("click", (e) => e.target === dim && dim.remove());
+      paint();
+      document.querySelector(".rz-device__screen").append(dim);
+    }
+    function none(kind) {
+      const T = {
+        class: ["등록된 클래스가 없어\n모바일 청구서를 생성할 수 없습니다.", "지금 클래스 등록하고\n간편한 모바일 청구서 생성 기능을 사용하세요.", "클래스 만들기", "./class-new.html?from=invoice-create"],
+        student: ["등록된 학생이 없어\n모바일 청구서를 생성할 수 없습니다.", "지금 간편하게 학생 등록하고\n편리한 모바일 청구서 생성 기능을 사용하세요.", "학생 등록하기", "./student-add.html?from=invoice-create"],
+        search: ["검색하신 학생이 없습니다.", "학생명을 다르게 입력해 보세요."],
+        pick: ["청구서를 생성할 클래스를\n선택하세요"],
+      }[kind];
+      const kids = [$("img", "", [], { src: "../assets/onboarding/class-empty.svg", alt: "" }), $("h2", "", [T[0]])];
+      if (T[1]) kids.push($("p", "", [T[1]]));
+      if (T[2]) kids.push(R.Button({ label: T[2], size: 48, onClick: () => go(T[3]) }));
+      if (kind === "class" || kind === "student") { // 이 화면은 개선 전에도 하단 텍스트 버튼(가이드)을 둔다(공통 논페이지 규칙의 예외)
+        const why = $("button", "none__why", [R.Icon("line/ic24_info", { size: 20, color: "var(--rz-gray-06)" }), kind === "class" ? "클래스를 왜 생성해야 하나요 ?" : "학생을 왜 등록해야 하나요 ?"], { type: "button" });
+        why.addEventListener("click", () => NonePage.openGuide({ kind, from: "invoice-create" }));
+        kids.push(why);
+      }
+      return $("div", "none" + (kind === "pick" ? " none--pick" : ""), kids);
+    }
+
+    /* ---------- bill card ---------- */
+    const stampOf = (b) => {
+      const kids = [$("span", "stamp stamp--make", [R.Chip({ label: "생성", size: "tiny", type: "type05" }), b.createdAt])];
+      if (b.paidAt) kids.push($("span", "stamp stamp--paid", [R.Chip({ label: "납부", size: "tiny", type: "type01" }), b.paidAt]));
+      return kids;
+    };
+    function detail(c) {
+      const rows = [
+        $("hr"), $("h4", "", ["수강료"]),
+        $("div", "", [$("span", "", ["클래스 수강료"]), $("span", "", [`${I.fmt(c.base)} 원`])]),
+        $("div", "", [$("span", "", ["할인 금액"]), $("span", "", [`${I.fmt(c.disc)} 원`])]),
+        $("div", "", [$("span", "", ["청구 수강료"]), $("span", "", [c.kind === "기간" ? `${I.fmt(c.base - c.disc)} 원 x ${c.months}개월` : `${I.fmt(c.tuition)} 원`])]),
+      ];
+      if (c.extras.length) rows.push($("div", "gap"), $("h4", "", ["기타경비"]), ...c.extras.map((e) => $("div", "", [$("span", "", [e.name || "-"]), $("span", "", [`${I.fmt(e.amount)} 원`])])));
+      return $("div", "bill__detail", rows);
+    }
+    function billSection({ s, sid, bill, extra, key }) {
+      const c = bill ? bill.calc : I.calc(s, I.adjustOf(sid, st.ym));
+      const isOpen = st.open.has(key);
+      const created = !!bill;
+      const klassName = s.klass || "-";
+      const cb = R.Checkbox({ disabled: extra || created, checked: !extra && !created && st.selected.has(sid), onChange: (on) => { on ? st.selected.add(sid) : st.selected.delete(sid); renderBar(); } });
+      cb.setAttribute("aria-label", `${s.name} 선택`);
+      const head = $("div", "bill__head", [cb, $("span", "bill__name", [s.name])]);
+      if (!extra && created) head.append(R.Button({ label: "추가 생성", size: "t24", color: "grey", onClick: () => go(`./invoice-adjust.html?sid=${sid}&mode=extra`) })); // 추가청구서는 조정 화면에서 작성 후 추가 생성
+
+      const toggle = $("button", "bill__toggle", [R.Icon(isOpen ? "solid/ic24_arrow-up" : "solid/ic24_arrow-down", { size: 24 })], { type: "button", "aria-label": isOpen ? "접기" : "펼치기", "aria-expanded": String(isOpen) });
+      toggle.addEventListener("click", () => { isOpen ? st.open.delete(key) : st.open.add(key); renderBody(); });
+      const amount = $("div", "bill__amount", [$("span", "", ["청구금액"]), $("span", "", [`${I.fmt(c.total)}원${c.suffix}`]), $("span", "grow")]);
+      if (!created) amount.append(R.Button({ label: "조정", size: "t24", variant: "line", color: "green", onClick: () => go(`./invoice-adjust.html?sid=${sid}`) }));
+      amount.append(toggle);
+
+      const title = $("div", "bill__title", [`${I.ymLabel(st.ym)} 청구서`]);
+      if (extra) title.append($("span", "bill__chip", [R.Icon("line/16_receipt", { size: 16 }), "추가청구서"]));
+      const card = $("div", "bill__card", [$("div", "bill__klass", [klassName]), $("div", "bill__body", [title, amount])]);
+      if (isOpen) card.append(detail(c));
+
+      const foot = $("div", "bill__foot", []);
+      if (created) foot.append(...stampOf(bill)); else foot.append(R.Chip({ label: "미생성", size: "tiny", type: "type04" }));
+      let dueEl;
+      if (created) dueEl = $("u", "", [bill.due]);
+      else { // 미생성 카드는 납부기한을 눌러 바꿀 수 있다 (375:162478) — 조정값(adjusts.due)에 저장
+        dueEl = $("button", "due-link", [I.dueFor(sid, st.ym)], { type: "button", "aria-label": "납부기한 선택" });
+        dueEl.addEventListener("click", () => DuePicker.open({ value: I.dueFor(sid, st.ym), onSave: (v) => { const adj = I.adjustOf(sid, st.ym); adj.due = v; I.saveAdjust(sid, st.ym, adj); renderBody(); } }));
+      }
+      foot.append($("span", "push", ["납부기한 : ", dueEl]));
+      return $("div", "bill" + (extra ? " bill--extra" : ""), [head, card, foot]);
+    }
+    function studentBox({ s, sid }) {
+      const { main, extras } = I.billsOf(sid, st.ym);
+      const parts = [billSection({ s, sid, bill: main, extra: false, key: `${sid}:main` })];
+      extras.forEach((b) => parts.push(billSection({ s, sid, bill: b, extra: true, key: `${sid}:${b.id}` })));
+      return $("article", "sbox", parts);
+    }
+
+    /* ---------- bottom bar ---------- */
+    const countEl = $("div", "count");
+    const btnSel = R.Button({ label: "선택 항목 생성", size: 56, onClick: () => { // 확인 화면(invoice-confirm)으로 — 선택한 미생성 학생만 넘긴다
+      const sids = visible().filter(({ sid }) => st.selected.has(sid) && !I.billsOf(sid, st.ym).main).map(({ sid }) => sid);
+      if (!sids.length) return;
+      store.set("invSel", JSON.stringify(sids));
+      go("./invoice-confirm.html");
+    } });
+    const btnAll = R.Button({ label: "전체 일괄 생성", size: 56, onClick: () => { // 지금 보이는 목록의 미생성 학생 전체
+      visible().filter(({ sid }) => !I.billsOf(sid, st.ym).main).forEach(({ s, sid }) => I.create(s, sid, st.ym, "main"));
+      st.selected.clear(); renderBody();
+    } });
+    const bar = $("div", "bar", [btnSel, btnAll]);
+    function renderBar() {
+      countEl.textContent = `${st.selected.size}건 선택됨`;
+      btnSel.disabled = !st.selected.size; btnSel.classList.toggle("is-disabled", !st.selected.size);
+    }
+
+    /* ---------- render ---------- */
+    const body = $("div", "");           // sort row · list (or none)
+    const scroll = $("div", "scroll", [band, body]);
+    const footWrap = $("div", "");
+    let mode = "list";
+    function renderBand() {
+      const miss = missing();
+      mode = miss ? miss : !st.kind ? "pick" : "list";
+      if (mode === "list") band.replaceChildren(monthCard(), searchBox(false), dropdowns(false, false));
+      else if (mode === "pick") band.replaceChildren(monthCard(), dropdowns(false, true));
+      else band.replaceChildren(monthCard(), dropdowns(mode === "class", false), searchBox(mode === "class")); // 빈 상태: 드롭다운 → 검색 순서(디자인)
+    }
+    const pillHost = $("div", "pillfix");
+    function renderBody() {
+      pillHost.replaceChildren();
+      if (mode === "pick") { body.replaceChildren(none("pick")); footWrap.replaceChildren(); return; }
+      if (mode === "class" || mode === "student") { body.replaceChildren(sortRow(), none(mode)); footWrap.replaceChildren(); return; }
+      const rows = visible();
+      if (!rows.length) {
+        // 검색 결과 없음 vs 이 클래스에 학생 없음(범위 한정 → 학생 논페이지)
+        body.replaceChildren(sortRow(), none(st.q ? "search" : "student"));
+        footWrap.replaceChildren();
+        return;
+      }
+      const keys = rows.flatMap(({ sid }) => [`${sid}:main`, ...I.billsOf(sid, st.ym).extras.map((b) => `${sid}:${b.id}`)]);
+      const allOpen = keys.every((k) => st.open.has(k));
+      const pill = $("button", "pill", [allOpen ? "일괄 접기" : "일괄 펼침", R.Icon(allOpen ? "line/ic24_arrow-up" : "line/ic24_arrow-down", { size: 16, color: "var(--rz-gray-06)" })], { type: "button" });
+      pill.addEventListener("click", () => { allOpen ? st.open.clear() : keys.forEach((k) => st.open.add(k)); renderBody(); });
+      body.replaceChildren(sortRow(), $("div", "list", rows.map(studentBox)));
+      pillHost.replaceChildren(pill);
+      footWrap.replaceChildren(countEl, bar);
+      renderBar();
+    }
+    /* ---------- 청구서 생성결과 (성공/실패) sheet — Figma 360:158463 · 360:158603 ---------- */
+    function openResult() {
+      let r; try { r = JSON.parse(store.get("invResult") || "null"); } catch { r = null; }
+      if (!r) return;
+      store.set("invResult", "");
+      const mask = (n) => (n.length > 20 ? n.slice(0, 20) + "…" : n);
+      let tab = r.okClasses.length || !r.failClasses.length ? 0 : 1;
+      const x = $("button", "res__close", [R.Icon("line/ic24_close-type01", { size: 20, color: "var(--rz-gray-06)" })], { type: "button", "aria-label": "닫기" });
+      const bodyEl = $("div", "res__body");
+      const tabs = R.Tabs({ type: "tap01", items: [`성공(${r.okClasses.length})`, `실패(${r.failClasses.length})`], selected: tab, onChange: (i) => { tab = i; paint(); } });
+      function paint() {
+        const ok = tab === 0, list = ok ? r.okClasses : r.failClasses;
+        bodyEl.replaceChildren(
+          $("img", "", [], { src: ok ? "../assets/onboarding/done-hands.svg" : "../assets/onboarding/invoice-fail.svg", alt: "" }),
+          $("h2", "", [ok ? "청구서 생성 작업이\n완료 되었습니다." : "청구서 생성 작업이\n실패 하였습니다."]),
+          $("p", "", [ok ? "청구서 생성 작업이 완료되었습니다.\n하단에 생성이 완료된 학원을 확인해주세요." : "요청하신 청구서 생성 작업이 실패하였습니다.\n하단에서 해당학원 확인 후 다시 시도해 주세요."]),
+          $("div", "res__chips", list.map((n) => $("span", "res__chip", [mask(n)]))),
+        );
+      }
+      const sheet = $("div", "res", [$("div", "res__head", ["청구서 생성결과", x]), tabs, bodyEl], { role: "dialog", "aria-modal": "true", "aria-label": "청구서 생성결과" });
+      const dim = $("div", "guide-dim", [sheet]);
+      const close = () => dim.remove();
+      x.addEventListener("click", close);
+      dim.addEventListener("click", (e) => e.target === dim && close());
+      paint();
+      document.querySelector(".rz-device__screen").append(dim);
+    }
+    function render() { renderBand(); renderBody(); }
+
+    /* 조정 저장 완료 토스트 — 출석 관리 지각 토스트(296:127932)와 같은 모양·위치: 343폭, 하단에서 48px, 2초 */
+    const showSavedToast = () => R.showToast(document.querySelector(".rz-device__screen"), { text: "청구서 정보가 저장되었습니다." }, { bottom: 48 });
+    const screen = $("div", "screen", [R.StatusBar(), header, scroll, footWrap, pillHost]);
+    document.getElementById("root").append(R.Device({ children: [screen] }));
+    render();
+    if (new URLSearchParams(location.search).get("result")) openResult();
+    if (qs.has("adjusted")) showSavedToast();
+  </script>
+</body>
+</html>
