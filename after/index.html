@@ -10,6 +10,8 @@
   <style>
     body {
       margin: 0;
+      -webkit-font-smoothing: antialiased; /* home.html(body.rz)과 같은 글자 렌더링 — 없으면 검정 박스 글자가 살짝 두꺼워 보인다 */
+      box-sizing: border-box; /* home.html(body.rz)과 같게 — 없으면 min-height:100vh + 위아래 패딩 80px 때문에 페이지 스크롤이 생긴다 */
       min-height: 100vh;
       font-family: var(--rz-font-sans);
       color: var(--rz-color-ink);
