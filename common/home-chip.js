@@ -347,7 +347,7 @@
       place(); window.addEventListener("resize", place); window.addEventListener("load", place);
     };
     if (window.RZ_SCENARIO) draw();
-    else if (SELF) { const sc = document.createElement("script"); sc.src = new URL("scenario.js?v=25", SELF).href; sc.onload = draw; document.head.append(sc); }
+    else if (SELF) { const sc = document.createElement("script"); sc.src = new URL("scenario.js?v=26", SELF).href; sc.onload = draw; document.head.append(sc); }
   }
   /* "Tokens & Components" 링크: 시나리오1은 시작 화면(index)에 있다. 시나리오2·3 은 홈에서 시작하므로 홈에도 같은 링크를 띄운다. */
   function mountDsLink() {
