@@ -34,9 +34,8 @@
     .app {
       position: relative;
       width: var(--rz-size-screen-width);
-      min-height: 811px; /* 903 total − status bar 44 − header 48 */
+      /* 화면 높이(812 − 상태바·헤더)에 한 번에 들어가도록 높이를 고정하지 않고 여백을 줄였다 → 스크롤 없음 */
       background: var(--rz-color-canvas);
-      padding-bottom: var(--rz-space-24);
     }
 
     .pad { padding: var(--rz-space-16) var(--rz-space-inset) 0; }
@@ -74,7 +73,7 @@
       pointer-events: none;
     }
 
-    .alarm-band { background: #F7F9FA; padding-top: 16px; padding-bottom: 16px; } /* 탑 네비 아래 알림 박스 영역: 옅은 회색 띠 + 흰 알림 카드 */
+    .alarm-band { background: #F7F9FA; padding-top: 12px; padding-bottom: 12px; } /* 탑 네비 아래 알림 박스 영역: 옅은 회색 띠 + 흰 알림 카드 */
     .inquiry {
       width: var(--rz-size-content-width);
       height: 64px;
@@ -122,11 +121,11 @@
     }
 
     .role-list {
-      margin-top: var(--rz-space-24);
+      margin-top: var(--rz-space-16);
       padding: 0 var(--rz-space-inset);
       display: flex;
       flex-direction: column;
-      gap: var(--rz-space-24);
+      gap: var(--rz-space-16);
     }
     .role-row {
       display: flex;
@@ -160,13 +159,13 @@
     }
 
     .divider {
-      margin: var(--rz-space-32) var(--rz-space-inset) 0;
+      margin: var(--rz-space-16) var(--rz-space-inset) 0;
       border: 0;
       height: 1px;
       background: var(--rz-color-gray-02);
     }
 
-    .find-row { margin-top: var(--rz-space-20); padding: 0 var(--rz-space-inset) 72px; }
+    .find-row { margin-top: var(--rz-space-12); padding: 0 var(--rz-space-inset); }
 
     .fab {
       position: absolute;
