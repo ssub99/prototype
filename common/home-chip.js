@@ -47,13 +47,15 @@
 .proto-sw__btn--reset { background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-04); }
 .proto-sw__btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .proto-sw__btn:focus-visible { outline: 2px solid var(--rz-primary); outline-offset: 2px; }
-.proto-scn { flex: none; width: 580px; height: 832px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; scrollbar-width: none; font-family: var(--rz-font-sans); }
+.proto-scn { flex: none; width: 800px; height: 832px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; scrollbar-width: none; font-family: var(--rz-font-sans); }
 .proto-scn::-webkit-scrollbar { display: none; }
 .proto-scn > :first-child { margin-top: auto; } /* 지문 영역 안의 내용 묶음을 세로 가운데에 둔다(내용이 넘치면 위에서부터 스크롤) */
 .proto-scn > :last-child { margin-bottom: auto; }
 .proto-scn[hidden] { display: none; }
 .proto-scn__intro { flex: none; border-radius: 16px; background: var(--rz-gray-07); padding: 20px 24px; color: var(--rz-white); font: var(--rz-type-body01-regular); line-height: 24px; }
-.proto-scn__intro p { margin: 0; }
+.proto-scn__intro p { margin: 0; white-space: pre-line; } /* 지문의 \n 줄바꿈 반영 */
+.proto-scn__intro p.is-item { white-space: nowrap; } /* 1~3번 지령은 줄바꿈 없이 한 줄 */
+.proto-scn__intro p:nth-child(2) { margin-bottom: 24px; } /* 상황 설명과 "아래의 지령…" 사이 한 줄 띄움 */
 .proto-scn__intro p:first-child { font: var(--rz-type-headline-bold); margin-bottom: 8px; }
 .proto-scn__list { flex: none; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .proto-scn__row { display: flex; gap: 12px; align-items: center; border-radius: 12px; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-03); padding: 16px 18px; font: var(--rz-type-headline-bold); color: var(--rz-black); line-height: 30px; }
@@ -73,6 +75,16 @@
 .proto-ctl__group { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 10px 16px; border-radius: 12px; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-03); font-family: var(--rz-font-sans); }
 .proto-ctl__scn { flex: none; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 10px 16px; border-radius: 12px; background: var(--rz-white); box-shadow: inset 0 0 0 1px var(--rz-gray-03); font-family: var(--rz-font-sans); } /* 시나리오 행: 유형 행 바로 아래, 칩으로 시나리오 선택(지금은 시나리오1 하나) */
 .proto-ctl__scn-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.proto-roster { position: fixed; z-index: 300; box-sizing: border-box; max-width: calc(100vw - 16px); max-height: calc(100vh - 120px); overflow: auto; border-radius: 16px; background: var(--rz-white); box-shadow: 0 8px 32px rgba(0,0,0,0.18), inset 0 0 0 1px var(--rz-gray-03); font-family: var(--rz-font-sans); } /* 툴팁: 학생명단 버튼 바로 위에 뜬다 */
+.proto-roster[hidden] { display: none; }
+.proto-roster__head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 16px 12px 20px; }
+.proto-roster__title { margin: 0; font: var(--rz-type-headline-bold); color: var(--rz-black); }
+.proto-roster__x { width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; padding: 0; display: grid; place-items: center; cursor: pointer; }
+.proto-roster__x:focus-visible { outline: 2px solid var(--rz-primary); outline-offset: 2px; }
+.proto-roster__body { padding: 0 20px 20px; }
+.proto-roster table { border-collapse: collapse; white-space: nowrap; font: var(--rz-type-small01-regular); color: var(--rz-black); }
+.proto-roster th, .proto-roster td { border: 1px solid var(--rz-gray-03); padding: 8px 12px; text-align: left; }
+.proto-roster th { background: var(--rz-gray-01); font: var(--rz-type-small01-bold); }
 .proto-ctl__label { font: var(--rz-type-body02-bold); color: var(--rz-gray-07); }
 .proto-ctl__right { display: flex; align-items: center; gap: 16px; }
 .proto-ctl__ver { display: flex; align-items: center; gap: 8px; font: var(--rz-type-small01-regular); color: var(--rz-gray-05); }
@@ -133,6 +145,34 @@
 
     // 시나리오 행: 유형 행 하단. 지금 적용된 지문 세트가 시나리오1이다 — 시나리오가 늘면 칩만 추가한다.
     const scnRow = mk("div", "proto-ctl__scn", [mk("div", "proto-ctl__scn-chips", [["1", "시나리오1"], ["2", "시나리오2"]].map(([k, l]) => asButton(R.Chip({ label: l, size: "regular", type: k === SCN ? "type01-solid" : "type02-line" }), () => switchScn(k)))), ver]) // 왼쪽 시나리오 칩, 오른쪽 개선 전/후 토글(흰 박스 + 여백);
+    // 학생명단: 누르면 표 팝업이 뜬다. 마우스가 표를 벗어나도 닫히지 않고, 버튼을 다시 누르거나 팝업의 X를 눌러야만 닫힌다.
+    let roster = null;
+    const place2 = () => { // 툴팁 위치: 버튼 위쪽에 붙이고, 화면 밖으로 나가지 않게 가로만 보정
+      if (!roster || roster.hidden) return;
+      const b = rosterBtn.getBoundingClientRect(), pane = document.querySelector(".proto-scn");
+      const pr = pane && !pane.closest("[hidden]") ? pane.getBoundingClientRect() : null; // 지문 영역에 딱 맞춘다(목업을 가리지 않게)
+      if (pr && pr.width) { roster.style.left = pr.left + "px"; roster.style.width = pr.width + "px"; roster.style.maxWidth = pr.width + "px"; }
+      else { roster.style.width = ""; roster.style.maxWidth = ""; roster.style.left = Math.max(8, Math.min(b.left, window.innerWidth - roster.offsetWidth - 8)) + "px"; }
+      roster.style.bottom = (window.innerHeight - b.top + 8) + "px";
+    };
+    window.addEventListener("resize", place2);
+    const setRoster = (o) => { if (roster) { roster.hidden = !o; place2(); } rosterBtn.setAttribute("aria-pressed", String(o)); };
+    const rosterBtn = asButton(R.Chip({ label: "학생명단", size: "regular", type: "type02-line" }), () => {
+      const rosterData = window.RZ_ROSTER; // 지문 스크립트(scenario.js)가 나중에 불러와지므로 누를 때 읽는다
+      if (!rosterData) return;
+      if (!roster) {
+        const tbl = document.createElement("table");
+        const thead = tbl.createTHead().insertRow(); rosterData.head.forEach((h) => { const th = document.createElement("th"); th.textContent = h; thead.append(th); });
+        const tb = tbl.createTBody(); rosterData.rows.forEach((r) => { const tr = tb.insertRow(); r.forEach((c) => { tr.insertCell().textContent = c; }); });
+        const x = mk("button", "proto-roster__x", []); x.type = "button"; x.setAttribute("aria-label", "닫기"); x.append(R.Icon("line/ic24_close-type01", { size: 20, color: "var(--rz-gray-07)" }));
+        x.addEventListener("click", () => setRoster(false));
+        roster = mk("div", "proto-roster", [mk("div", "proto-roster__head", [mk("h2", "proto-roster__title", ["학생명단"]), x]), mk("div", "proto-roster__body", [tbl])]);
+        roster.setAttribute("role", "region"); roster.setAttribute("aria-label", "학생명단");
+        document.body.append(roster); setRoster(true); return;
+      }
+      setRoster(roster.hidden);
+    });
+    rosterBtn.setAttribute("aria-pressed", "false");
     const back = asButton(R.Chip({ label: "이전페이지", size: "regular", type: "type02-line" }), () => (history.length > 1 ? history.back() : (location.href = entryOf(version))));
     const main = asButton(R.Chip({ label: "메인으로", size: "regular", type: "type02-line" }), () => { location.href = new URL("./home.html", location.href).href; });
     const first = R.Chip({ label: "처음으로", size: "regular", type: "type02-line" });
@@ -171,14 +211,14 @@
     refresh.type = "button";
     refresh.prepend(R.Icon("line/ic24_initialization01", { size: 16, color: "var(--rz-gray-06)" })); // 새로고침: 순환(초기화) 아이콘
     refresh.addEventListener("click", () => location.reload());
-    const accRow = mk("div", "proto-accrow", [acc, survey]); // 접기 ………… 설문 (어코디언 영역, 한 행)
+    const accRow = mk("div", "proto-accrow", [acc, rosterBtn, survey]); // 접기 ………… 설문 (어코디언 영역, 한 행)
     ctl.append(accRow, scnRow, mk("div", "proto-ctl__btns", [refresh, first, main, back, resetBtn, conv])); // 접히는 영역(버튼 줄): 새로고침이 가장 왼쪽
     ctl._acc = accRow;
     ctl._group = scnRow; // 유형 행은 없애고 개선 전/후 토글은 시나리오 행으로 옮겼다
     document.body.append(ctl);
   }
   /* ---------- 지문 패널 ---------- */
-  const LEFT_W = 580; // 지문 영역 너비(지문 박스마다 오른쪽에 스톱워치가 붙어 목업(395)보다 넓다)
+  const LEFT_W = 800; // 지문 영역 너비(지문 박스마다 오른쪽에 스톱워치가 붙어 목업(395)보다 넓다)
   /* 스톱워치: NN:NN(분:초) · 재생 · 일시정지 · 정지. 정지하면 모든 버튼이 비활성화되고 시간이 멈춘다(처음으로로만 리셋). 시각 기반이라 화면 이동에도 이어진다. */
   function stopwatch(idx) {
     const KEY = `${SWKEY}.${slot}.${idx}`; // 버전별 분리
@@ -265,7 +305,7 @@
       const el = document.createElement("aside");
       el.className = "proto-scn"; el.setAttribute("aria-label", "지문");
       const intro = document.createElement("div"); intro.className = "proto-scn__intro";
-      (sc.intro || []).forEach((t) => { const p = document.createElement("p"); p.textContent = t; intro.append(p); });
+      (sc.intro || []).forEach((t) => { const p = document.createElement("p"); p.textContent = t; if (/^\d\.\s/.test(t)) p.className = "is-item"; intro.append(p); });
       const list = document.createElement("ol"); list.className = "proto-scn__list";
       (sc.steps || []).forEach((t, i) => {
         const li = document.createElement("li"); li.className = "proto-scn__row";
@@ -307,7 +347,7 @@
       place(); window.addEventListener("resize", place); window.addEventListener("load", place);
     };
     if (window.RZ_SCENARIO) draw();
-    else if (SELF) { const sc = document.createElement("script"); sc.src = new URL("scenario.js?v=18", SELF).href; sc.onload = draw; document.head.append(sc); }
+    else if (SELF) { const sc = document.createElement("script"); sc.src = new URL("scenario.js?v=19", SELF).href; sc.onload = draw; document.head.append(sc); }
   }
   const scan = () => { if (document.querySelector(".rz-device")) { mount(); mountScenario(); } };
   new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
