@@ -19,10 +19,10 @@
   const version = location.pathname.split("/").slice(-2, -1)[0] === "before" ? "before" : "after";
   const other = version === "before" ? "after" : "before";
   // 시나리오(1|2): 데이터·스톱워치·컨벤션 회차를 시나리오마다 완전히 따로 쓴다 — 칸 이름(slot) = 버전 (+ "-s2")
-  const SCN = (() => { try { return sessionStorage.getItem("proto.scn") === "2" ? "2" : "1"; } catch { return "1"; } })();
-  const slotOf = (v) => v + (SCN === "2" ? "-s2" : "");
+  const SCN = (() => { try { return ["1", "2", "3"].includes(sessionStorage.getItem("proto.scn")) ? sessionStorage.getItem("proto.scn") : "1"; } catch { return "1"; } })();
+  const slotOf = (v) => v + (SCN === "1" ? "" : "-s" + SCN);
   const slot = slotOf(version), otherSlot = slotOf(other);
-  const entryOf = (v) => (SCN === "2" ? new URL(`../${v}/home.html`, location.href).href : startOf(v)); // 시나리오2 는 학원이 이미 있는 상태로 시작 → 홈
+  const entryOf = (v) => (SCN !== "1" ? new URL(`../${v}/home.html`, location.href).href : startOf(v)); // 시나리오2 는 학원이 이미 있는 상태로 시작 → 홈
   const startOf = (v) => new URL(`../${v}/index.html`, location.href).href;
   const SWKEY = "proto.sw"; // 지문별 스톱워치 상태 proto.sw.<버전>.<번호> — 개선 전/후가 따로 쌓인다 (rz.* 가 아니라 화면 이동에도 유지, 처음으로·초기화 전환에서만 리셋)
   // 한 칸(버전×시나리오)의 데이터·임시 값·스톱워치·회차 키를 지운다 — 다른 칸은 건드리지 않는다.
@@ -123,8 +123,8 @@
     const switchScn = (k) => {
       if (k === SCN) return;
       try { sessionStorage.setItem("proto.scn", k); } catch { /* private mode */ }
-      if (k === "2" && window.RzData) window.RzData.seed2(); // 시나리오2 는 학원만 있는 상태로 시작
-      const target = version + (k === "2" ? "-s2" : "");
+      if (k !== "1" && window.RzData) window.RzData.seed2(); // 시나리오2 는 학원만 있는 상태로 시작
+      const target = version + (k === "1" ? "" : "-s" + k);
       let has = false;
       try { const raw = sessionStorage.getItem(`rz.data.${target}`); has = !!(raw && JSON.parse(raw).academy); } catch { /* private mode */ }
       location.href = has ? new URL(`../${version}/home.html`, location.href).href : startOf(version);
@@ -144,7 +144,7 @@
     });
 
     // 시나리오 행: 유형 행 하단. 지금 적용된 지문 세트가 시나리오1이다 — 시나리오가 늘면 칩만 추가한다.
-    const scnRow = mk("div", "proto-ctl__scn", [mk("div", "proto-ctl__scn-chips", [["1", "시나리오1"], ["2", "시나리오2"]].map(([k, l]) => asButton(R.Chip({ label: l, size: "regular", type: k === SCN ? "type01-solid" : "type02-line" }), () => switchScn(k)))), ver]) // 왼쪽 시나리오 칩, 오른쪽 개선 전/후 토글(흰 박스 + 여백);
+    const scnRow = mk("div", "proto-ctl__scn", [mk("div", "proto-ctl__scn-chips", [["1", "시나리오1"], ["2", "시나리오2"], ["3", "시나리오3"]].map(([k, l]) => asButton(R.Chip({ label: l, size: "regular", type: k === SCN ? "type01-solid" : "type02-line" }), () => switchScn(k)))), ver]) // 왼쪽 시나리오 칩, 오른쪽 개선 전/후 토글(흰 박스 + 여백);
     // 학생명단: 누르면 표 팝업이 뜬다. 마우스가 표를 벗어나도 닫히지 않고, 버튼을 다시 누르거나 팝업의 X를 눌러야만 닫힌다.
     let roster = null;
     const place2 = () => { // 툴팁 위치: 버튼 위쪽에 붙이고, 화면 밖으로 나가지 않게 가로만 보정
@@ -347,9 +347,17 @@
       place(); window.addEventListener("resize", place); window.addEventListener("load", place);
     };
     if (window.RZ_SCENARIO) draw();
-    else if (SELF) { const sc = document.createElement("script"); sc.src = new URL("scenario.js?v=19", SELF).href; sc.onload = draw; document.head.append(sc); }
+    else if (SELF) { const sc = document.createElement("script"); sc.src = new URL("scenario.js?v=25", SELF).href; sc.onload = draw; document.head.append(sc); }
   }
-  const scan = () => { if (document.querySelector(".rz-device")) { mount(); mountScenario(); } };
+  /* "Tokens & Components" 링크: 시나리오1은 시작 화면(index)에 있다. 시나리오2·3 은 홈에서 시작하므로 홈에도 같은 링크를 띄운다. */
+  function mountDsLink() {
+    if (!/\/home\.html$/.test(location.pathname) || document.querySelector(".ds-link") || !document.body) return;
+    const a = document.createElement("a");
+    a.className = "ds-link"; a.href = "../ds/showcase.html"; a.textContent = "Tokens & Components";
+    a.style.cssText = "position:fixed;top:16px;right:16px;z-index:50;padding:8px 12px;border-radius:999px;font:var(--rz-type-small01-regular);color:var(--rz-gray-06);text-decoration:none;background:color-mix(in srgb, var(--rz-white) 85%, transparent)";
+    document.body.append(a);
+  }
+  const scan = () => { mountDsLink(); if (document.querySelector(".rz-device")) { mount(); mountScenario(); } };
   new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
   document.addEventListener("DOMContentLoaded", scan);
 })();

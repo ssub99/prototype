@@ -9,14 +9,16 @@
  */
 (function () {
   const version = location.pathname.split("/").slice(-2, -1)[0] || "default";
-  // 시나리오: 시나리오1·2 는 서로 완전히 분리된 데이터 칸을 쓴다. 시나리오1 은 예전 키(rz.data.<버전>) 그대로, 시나리오2 는 <버전>-s2.
-  const scenario = (() => { try { return sessionStorage.getItem("proto.scn") === "2" ? "2" : "1"; } catch { return "1"; } })();
-  const slot = version + (scenario === "2" ? "-s2" : "");
+  // 시나리오: 시나리오1·2·3 은 서로 완전히 분리된 데이터 칸을 쓴다. 시나리오1 은 예전 키(rz.data.<버전>) 그대로, 시나리오2 는 <버전>-s2.
+  const scenario = (() => { try { return ["1", "2", "3"].includes(sessionStorage.getItem("proto.scn")) ? sessionStorage.getItem("proto.scn") : "1"; } catch { return "1"; } })();
+  const slot = version + (scenario === "1" ? "" : "-s" + scenario);
   const KEY = `rz.data.${slot}`;
-  // 시나리오2 시작 상태: 학원만 생성되어 있다(중·고등학생 대상 종합학원). 클래스·학생은 없다. 개선 전/후 동일.
-  const SEED2 = () => ({ academy: { name: "랠리즈 종합학원", size: "50~100명", targets: ["중등", "고등"], address: "서울 강남구 테헤란로 123", addressDetail: "4층", phone: "02-1234-5678" }, classes: [], students: [], bulk: [] });
-  const seed2 = () => { try { ["before", "after"].forEach((v) => { const k = `rz.data.${v}-s2`; if (sessionStorage.getItem(k) == null) sessionStorage.setItem(k, JSON.stringify(SEED2())); }); } catch { /* private mode */ } };
-  if (scenario === "2") seed2(); // 데이터 초기화로 비워진 칸도 다음 화면에서 다시 이 상태로 시작한다
+  // 시나리오2 시작 상태: 학원만 생성되어 있다(고등학생 대상 수학학원). 클래스·학생은 없다. 개선 전/후 동일.
+  const SEED2 = () => ({ academy: { name: "랠리즈 수학학원", size: "50~100명", targets: ["중등", "고등"], address: "서울 강남구 테헤란로 123", addressDetail: "4층", phone: "02-1234-5678" }, classes: [], students: [], bulk: [] });
+  const seed2 = () => { try { ["before", "after"].forEach((v) => ["-s2", "-s3"].forEach((x) => { const k = `rz.data.${v}${x}`; const raw = sessionStorage.getItem(k);
+        if (raw == null) sessionStorage.setItem(k, JSON.stringify(SEED2()));
+        else if (raw.includes("랠리즈 종합학원")) sessionStorage.setItem(k, raw.replace("랠리즈 종합학원", "랠리즈 수학학원")); }));  /* 예전 시드로 저장된 학원명도 맞춘다 */ } catch { /* private mode */ } };
+  if (scenario !== "1") seed2(); // 데이터 초기화로 비워진 칸도 다음 화면에서 다시 이 상태로 시작한다
   const empty = () => ({ academy: null, classes: [], students: [], bulk: [] });
 
   function load() {

@@ -139,7 +139,7 @@
   </main>
 
   <script src="./ds/rallyz.browser.js"></script>
-  <script src="./common/scenario.js?v=19"></script>
+  <script src="./common/scenario.js?v=25"></script>
   <script>
     // Rallyz logo from the DS icon set (glyph/logo, currentColor)
     const logo = Rallyz.Icon("glyph/logo", { width: 96, height: 29, color: "var(--rz-primary)" });
@@ -148,8 +148,8 @@
     /* 컨벤션: 지문별 스톱워치에서 정지로 저장된 시간(localStorage "proto.conv", 회차 = "처음으로" 사이의 한 번의 진행)을 표로 조회. 다른 창에서 저장되면 자동 갱신. */
     (function () {
       const KEY = "proto.conv";
-      const scOf = () => (scn === "2" ? window.RZ_SCENARIOS_2 : window.RZ_SCENARIOS) || {};
-      const SCENARIOS = [["1", "시나리오1"], ["2", "시나리오2"]]; // 시나리오가 늘면 여기와 지문 세트(scenario.js)만 추가한다
+      const scOf = () => ({ 1: window.RZ_SCENARIOS, 2: window.RZ_SCENARIOS_2, 3: window.RZ_SCENARIOS_3 }[scn]) || {};
+      const SCENARIOS = [["1", "시나리오1"], ["2", "시나리오2"], ["3", "시나리오3"]]; // 시나리오가 늘면 여기와 지문 세트(scenario.js)만 추가한다
       let scn = "1";
       const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{"sessions":[]}').sessions || []; } catch { return []; } };
       // 프로토타입 창이 주소(#conv=…)로 넘겨준 기록을 합쳐 저장한다(저장소가 창마다 분리돼도 보이도록).
@@ -185,7 +185,7 @@
         const foot = el("tr", "", [el("td", "", ["평균"]), el("td", ""), ...avg.map((a) => el("td", "num", [a])), el("td", ""), el("td", "")]);
         host.replaceChildren(el("table", "", [el("thead", "", [head]), el("tbody", "", body), el("tfoot", "", [foot])]));
       }
-      /* 시나리오 칩: 누르면 그 시나리오의 시간 기록만 표로 조회한다(지금은 시나리오1 하나). */
+      /* 시나리오 칩: 누르면 그 시나리오의 시간 기록만 표로 조회한다(시나리오1·2·3). */
       function renderScn() {
         document.getElementById("scn").replaceChildren(...SCENARIOS.map(([k, l]) => {
           const c = el("button", "scn__chip" + (k === scn ? " is-on" : ""), [l]); c.type = "button";

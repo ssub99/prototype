@@ -49,7 +49,7 @@
 
   /** Values handed between screens (session only). */
   // 화면 사이로 넘기는 임시 값도 개선 전/후가 섞이지 않게 버전별 키(rz.<버전>.<이름>)로 둔다.
-  const ver = (location.pathname.split("/").slice(-2, -1)[0] === "before" ? "before" : "after") + ((() => { try { return sessionStorage.getItem("proto.scn") === "2" ? "2" : "1"; } catch { return "1"; } })() === "2" ? "-s2" : ""); // 시나리오2 는 별도 칸
+  const ver = (location.pathname.split("/").slice(-2, -1)[0] === "before" ? "before" : "after") + ((() => { try { return ["1", "2", "3"].includes(sessionStorage.getItem("proto.scn")) ? sessionStorage.getItem("proto.scn") : "1"; } catch { return "1"; } })().replace(/^1$/, "").replace(/^(\d)$/, "-s$1")); // 시나리오2·3 은 별도 칸
   const store = {
     get(k, d = "") { try { return sessionStorage.getItem(`rz.${ver}.${k}`) ?? d; } catch { return d; } },
     set(k, v) { try { sessionStorage.setItem(`rz.${ver}.${k}`, v); } catch { /* private mode */ } },
