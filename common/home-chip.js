@@ -78,7 +78,7 @@
 .proto-roster { position: fixed; z-index: 300; box-sizing: border-box; max-width: calc(100vw - 16px); max-height: calc(100vh - 120px); overflow: auto; border-radius: 16px; background: var(--rz-white); box-shadow: 0 8px 32px rgba(0,0,0,0.18), inset 0 0 0 1px var(--rz-gray-03); font-family: var(--rz-font-sans); } /* 툴팁: 학생명단 버튼 바로 위에 뜬다 */
 .proto-roster[hidden] { display: none; }
 .proto-roster__head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 16px 12px 20px; }
-.proto-roster__title { margin: 0; font: var(--rz-type-headline-bold); color: var(--rz-black); }
+.proto-roster__title { margin: 0; font: var(--rz-type-body01-bold); color: var(--rz-black); }
 .proto-roster__x { width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; padding: 0; display: grid; place-items: center; cursor: pointer; }
 .proto-roster__x:focus-visible { outline: 2px solid var(--rz-primary); outline-offset: 2px; }
 .proto-roster__body { padding: 0 20px 20px; }
